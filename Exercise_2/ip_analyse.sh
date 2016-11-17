@@ -44,7 +44,7 @@ function getIP() {
   else
     result=$(ping -c 1 -q $1)
   fi
-  echo -e "$result" | head -n 1 | sed -E "s/.*\(//g" | sed -E "s/\).*//g"
+  echo -e "$result" | head -n 1 | sed -E "s/\).*//g" | sed -E "s/.*\(//g"
 }
 
 function getPingResult() {
@@ -72,8 +72,11 @@ mkdir -p "output"
 echo -ne "Creating files...\n"
 while read -r host; do
   printProgress $counter $hostCount $host
-  if [ ! -e "output/"$host$OUTPUT_EXT ]; then
-    echo "time,ip,min,avg,max,stddev" > "output/"$host$OUTPUT_EXT
+  if [ ! -e "output/"$host.6.$OUTPUT_EXT ]; then
+    echo "time,ip,min,avg,max,stddev" > "output/"$host.6$OUTPUT_EXT
+  fi
+  if [ ! -e "output/"$host.4.$OUTPUT_EXT ]; then
+    echo "time,ip,min,avg,max,stddev" > "output/"$host.4$OUTPUT_EXT
   fi
   counter=$((counter+1))
 done <<< "$HOSTS"
@@ -84,7 +87,11 @@ counter=0
 printProgress $counter $hostCount;
 while read -r host; do
   printProgress $(($counter)) $hostCount $host;
-  echo -e "$(date +"%Y-%m-%d %H:%M:%S"),$(getIP $host),$(getPingResult $host)" >> "output/"$host$OUTPUT_EXT;
+  if [ "$ping6" = true ]; then
+    echo -e "$(date +"%Y-%m-%d %H:%M:%S"),$(getIP $host),$(getPingResult $host)" >> "output/"$host.6$OUTPUT_EXT;
+  else
+    echo -e "$(date +"%Y-%m-%d %H:%M:%S"),$(getIP $host),$(getPingResult $host)" >> "output/"$host.4$OUTPUT_EXT;
+  fi;
   counter=$((counter+1));
 done <<< "$HOSTS"
 printProgress $counter $hostCount ""
