@@ -72,10 +72,10 @@ mkdir -p "output"
 echo -ne "Creating files...\n"
 while read -r host; do
   printProgress $counter $hostCount $host
-  if [ ! -e "output/"$host.6.$OUTPUT_EXT ]; then
+  if [ ! -e "output/"$host.6$OUTPUT_EXT ]; then
     echo "time,ip,min,avg,max,stddev" > "output/"$host.6$OUTPUT_EXT
   fi
-  if [ ! -e "output/"$host.4.$OUTPUT_EXT ]; then
+  if [ ! -e "output/"$host.4$OUTPUT_EXT ]; then
     echo "time,ip,min,avg,max,stddev" > "output/"$host.4$OUTPUT_EXT
   fi
   counter=$((counter+1))
