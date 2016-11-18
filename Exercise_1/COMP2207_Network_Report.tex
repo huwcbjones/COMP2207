@@ -6,6 +6,28 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{color}
+\usepackage[style=verbose]{biblatex}
+\usepackage{filecontents}
+\begin{filecontents}{bib.bib}
+@online{cve_apache,
+  title = {Apache Http Server version 2.2.14 : Security vulnerabilities},
+  url = {https://www.cvedetails.com/vulnerability-list.php?vendor_id=45&product_id=66&version_id=87506&page=1&hasexp=0&opdos=0&opec=0&opov=0&opcsrf=0&opgpriv=0&opsqli=0&opxss=0&opdirt=0&opmemc=0&ophttprs=0&opbyp=0&opfileinc=0&opginf=0&cvssscoremin=0&cvssscoremax=0&year=0&month=0&cweid=0&order=3&trc=27&sha=024b375ba21efba716cfbc6b760391f7d737bf94},
+}
+@online{cve_nginx_1,
+  title = {Nginx Nginx : List of security vulnerabilities},
+  url = {http://www.cvedetails.com/vulnerability-list/vendor_id-10048/product_id-17956/Nginx-Nginx.html}
+}
+@online{cve_nginx_2,
+  title = {Igor Sysoev Nginx : List of security vulnerabilities},
+  url = {https://www.cvedetails.com/vulnerability-list/vendor_id-10439/product_id-18640/Igor-Sysoev-Nginx.html}
+}
+@online{cve_openssh,
+  title = {Openbsd Openssh version 5.3 : Security vulnerabilities},
+  url ={https://www.cvedetails.com/vulnerability-list.php?vendor_id=97&product_id=585&version_id=121223&page=1&hasexp=0&opdos=0&opec=0&opov=0&opcsrf=0&opgpriv=0&opsqli=0&opxss=0&opdirt=0&opmemc=0&ophttprs=0&opbyp=0&opfileinc=0&opginf=0&cvssscoremin=0&cvssscoremax=0&year=0&month=0&cweid=0&order=3&trc=8&sha=3be11a05a90871a372ef706783c9de4f3641868e}
+}
+\end{filecontents}
+
+\addbibresource{bib.bib}
 
 \hypersetup{
   pdfinfo={ee
@@ -26,6 +48,15 @@
 \newpage
 
 \section{Scan Results}
+\subsection{Summary}
+\begin{tabular}{|l|l|r|}\hline
+Service & Port(s) & Number of Hosts \\ \hline
+HTTP & \texttt{80/tcp}, \texttt{8080/tcp} & 25 \\ \hline
+HTTPS & \texttt{443/tcp} & 8 \\ \hline
+VOIP/H.323 & \texttt{1720/tcp} & 464 \\ \hline
+SSH & \texttt{22/tcp} & 1 \\ \hline
+\end{tabular}
+
 \subsection{HTTP}
 The HTTP service is the \textbf{Hyper Text Transfer Protocol}.
 It is the application layer that drives the majority of websites worldwide.
@@ -52,8 +83,8 @@ Public key authentication is also used to mitigate Man-In-The-Middle (MITM) atta
 
 HTTPS therefore requires the server to have a public key certificate to validate the private key of the server.
 It is the responsibility of the server admin to install the public certificate.
-Most organisations will charge for public certificates, however a group called letsencrypt.org are promoting the use of widespread HTTPS by offering free certificates.
-These certificates are much more secure than Self-Signed certificates, however they do not validate the server party as well as an enterprise-grade certificate from a reputable company (e.g.:) VeriSign.
+Most organisations will charge for public certificates, however a group called \texttt{letsencrypt.org} are promoting the use of widespread HTTPS by offering free certificates.
+These certificates are much more secure than Self-Signed certificates, however they do not validate the server party as well as an enterprise-grade certificate from a reputable company (e.g. VeriSign).
 
 Overall, there are 8 hosts listening on \texttt{443/tcp} running an HTTPS server.
 All 8 hosts are also listening on \texttt{80/tcp} running an HTTP server.
@@ -89,7 +120,7 @@ There are 27 publicly listed vulnerabilities for this version, most of which wou
 Other vulnerabilities allow easy Cross Site Scripting (XSS).
 
 However, most vulnerabilities in Apache are to do with the shear amount of modules that are bundled in the package.
-%(src: https://www.cvedetails.com/vulnerability-list.php?vendor_id=45&product_id=66&version_id=87506&page=1&hasexp=0&opdos=0&opec=0&opov=0&opcsrf=0&opgpriv=0&opsqli=0&opxss=0&opdirt=0&opmemc=0&ophttprs=0&opbyp=0&opfileinc=0&opginf=0&cvssscoremin=0&cvssscoremax=0&year=0&month=0&cweid=0&order=3&trc=27&sha=024b375ba21efba716cfbc6b760391f7d737bf94)
+\footcite{cve_apache}
 
 
 \subsubsection{NGINX}
@@ -104,8 +135,7 @@ A majority of the vulnerabilities are Denial of Service attacks.
 There also seems to be a flaw in the NGINX DNS Resolver in versions prior to 1.9.10 that allows specially crafted DNS CNAME responses to DOS the server due to a buggy parser/handler.
 Some vulnerabilities allow arbitrary code to be executed on the host via specially crafted packets (using the \texttt{SPDY} handler).
 One vulnerability allows remote clients to bypass some restrictions via an unescaped space character in a URI.
-%(src: http://www.cvedetails.com/vulnerability-list/vendor_id-10048/product_id-17956/Nginx-Nginx.html)
-%(src: https://www.cvedetails.com/vulnerability-list/vendor_id-10439/product_id-18640/Igor-Sysoev-Nginx.html)
+\footcite{cve_nginx_1}\footcite{cve_nginx_2}
 
 \subsection{SSH}
 The nmap scan indicated that the one host listening on \texttt{22/tcp} was running OpenSSH 5.3 and listening for SSH 2.0.
@@ -114,8 +144,9 @@ The most recent release of OpenSSH is 7.3 (released August 2016).
 CVE details list 8 vulnerabilities for OpenSSH v5.3.
 A majority of the vulnerabilities are Denial of Service attacks by exploiting buffer overflows, or creating enough new TCP connections to overload the service.
 Other vulnerabilities make use of specially crafted packets in order to get the OpenSSH server to send sensitive information stored in memory.
-%(src: https://www.cvedetails.com/vulnerability-list.php?vendor_id=97&product_id=585&version_id=121223&page=1&hasexp=0&opdos=0&opec=0&opov=0&opcsrf=0&opgpriv=0&opsqli=0&opxss=0&opdirt=0&opmemc=0&ophttprs=0&opbyp=0&opfileinc=0&opginf=0&cvssscoremin=0&cvssscoremax=0&year=0&month=0&cweid=0&order=3&trc=8&sha=3be11a05a90871a372ef706783c9de4f3641868e)
+\footcite{cve_openssh}
 
+\newpage
 \section{Shortcomings}
 Network port scans are an easy way to produce a list of hosts and their potential flaws.
 But, the cannot show the entire picture of an internal network's security.
@@ -161,4 +192,6 @@ However in the complex environment of an \texttt{802.1Q}/\texttt{802.1.X} enviro
 
 Overall, a Network Scan cannot show the full picture when it comes to the health of a network.
 
+\newpage
+\printbibliography
 \end{document}
