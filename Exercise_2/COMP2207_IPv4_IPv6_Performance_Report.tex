@@ -26,6 +26,24 @@
 \newpage
 
 \section{Data Gathering}
+To gather the data, I decided to create a bash script.
+The idea was to use the native \texttt{ping} and \texttt{ping6} commands available in standard POSIX compatible environments to do the actual pinging,
+and then use the standard utilities to save the min/max/average/standard deviation data into a CSV file (along with the time and IP that was actually pinged).
+
+My script had options to specify the number of pings and interval between pings.
+I used bash's inbuilt \texttt{getopts} using flags in order to set these values.
+I defaulted to setting the number of pings to 30 and the interval to 0.5 seconds.
+This meant each test would take a minimum of 15 seconds and therefore each running of the script would take on average 25 to 30 minutes.
+
+My script logged the time of day, the IP address (resolved from the hostname) and then min/max/average/standard deviation.
+It logged the data independently for each host.
+This meant each host's IPv4 and IPv6 data was kept in different files and therefore kept separate.
+I chose to log this much data as it would give greater flexibility later when analysing the results.
+
+I left my data gathering script running for about a day.
+I then wrote another quick bash script to extract the hostname, and average the average ping time.
+This left me with a \texttt{summary.4.csv} file and a \texttt{summary.6.csv} file containing each host and the average ping.
+I then combined these two files together along with the \texttt{Top100Sites.csv}
 
 \section{Measurement Results}
 
