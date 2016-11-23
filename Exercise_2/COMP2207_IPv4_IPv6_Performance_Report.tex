@@ -12,13 +12,21 @@
 \usepackage{fancyref}
 \usepackage[super]{nth}
 \usepackage{siunitx}
+\usepackage[inline]{enumitem}
 
 \def \IPF {\texttt{IPv4}}
 \def \IPS {\texttt{IPv6}}
+
+\author{Huw Jones\\27618153\\hcbj1g15@soton.ac.uk}
+\title{COMP2207: Distributed Systems and Networks}
+\def \subtitle {IPv4/IPv6 Performance Report}
+
+
 \hypersetup{
   pdfinfo={ee
-    Title={COMP2207 IPv4/IPv6 Performance Report},
-    Author={Huw Jones},
+    Title={\@title},
+    Subtitle={\@subtitle}
+    Author={\@author},
   },
   colorlinks=false,
   pdfborder=0 0 0,
@@ -33,11 +41,26 @@
 \addbibresource{bib.bib}
 \pagestyle{headings}
 
-\author{Huw Jones\\27618153\\hcbj1g15}
-\title{COMP2207 IPv4/IPv6 Performance Report}
-
 \begin{document}
-\maketitle
+\makeatletter
+\begin{titlepage}
+	\centering
+	{\scshape\LARGE University of Southampton \par}
+	\vspace{2cm}
+    {\huge\bfseries \@title \par}
+    \vspace{1cm}
+	{\scshape\huge \subtitle \par}
+	\vspace{3cm}
+    {\Large
+    \begin{tabular}{c}
+      \@author
+    \end{tabular} \\}
+  \vspace{6cm}
+    {\Large
+    \today
+    }
+\end{titlepage}
+\makeatother
 \newpage
 
 %%
@@ -91,6 +114,8 @@ My \texttt{summary.sh} script was able to differentiate this when producing the 
 %% SECTION: Discussion
 %%
 \section{Discussion}
+\subsection*{Results Analysis}
+
 As shown in \Fref{sec:res_breakdown}, of all hosts, only 1\% was unreachable via \IPF whereas, 63\% were unable to be reached via \IPS.
 Out of the 99\% of hosts reachable via \IPF, $16/99$ (16.2\%) of them blocked ping responses whereas only $1/37$ (2.7\%) blocked pings via \IPF.
 The reason for the low percentage of blocked pings on {\IPS} is most probably due to the fact that the sites blocking {\IPF} pings aren't {\IPS} enabled yet.
@@ -117,6 +142,31 @@ The time taken to reach China and back is going to take a long time.
 The graph shown in \Fref{sec:res_stacked_percentage} takes the {\IPF} and {\IPS} time and displays them as a percentage bar.
 It shows that most sites that support {\IPS} and {\IPF} respond quicker via {\IPS} than they do via {\IPF}.
 This slight (but barely noticeable) decrease in time could be due to how {\IPS} was designed.
+Some features of {\IPS} that could result in a decrease in time include reduced fragmentation and the lack of NAT.
+Reduced fragmentation means packet fragmentation is decided at the sender which means each hop does not have to reassemble packets and fragment them again.
+
+\subsection*{Accuracy and Limitations}
+Due to the amount of times the tester was run, the different locations the tests where run, and the elimination of anomalous results I believe that my results are accurate.
+
+The nature of the methodology does not give much to indicate a website's raw performance.
+The latency of a connection (ping time) is a small fraction of the time that goes into a web request.
+Take \texttt{HTTP} for example. Assuming no caching of resources is occurring, \texttt{HTTP} requires:
+\begin{enumerate*}
+  \item A DNS lookup
+  \item Making an initial connection
+  \item Connecting via SSL (if applicable)
+  \item Upload the request
+  \item Waiting for the remote server to generate the content
+  \item Download the response
+\end{enumerate*}.
+All of this requires a lot of time in comparison to the small(er) latencies.
+It is agreed though, that the greater the latency between two computers, the longer the time taken to load content would be.
+However, there are certain situations where this could be disproved.
+For example, a server on a LAN could have a ping < \SI{1}{\milli\second}, however, the application server response time could be upward of minutes
+depending on the time taken to execute scripts/generate content.
+
+Overall, ping testing is a limited metric that cannot be used solely to identify the performance of a network connected computer.
+It is more a metric to be used with other metrics to build a full picture of a computer's performance.
 
 \newpage
 \printbibliography
