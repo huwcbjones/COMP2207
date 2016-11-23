@@ -10,16 +10,20 @@ do
     min = 9999999;
     maxi = 0;
     average = 0;
+    averageNum = 0;
+    no_route = 0;
+    blocked = 0;
     status = "success";
   }
   {
     if(recordNum != 0){
       if($4 == " 0 received") {
-        status = "Blocked";
+        blocked++;
       } else if ($4 == "") {
-        status = "No route to host";
+        no_route++;
       } else {
         average=average + $4;
+        averageNum++;
         if($3 < min){
           min = $3
         }
@@ -31,10 +35,13 @@ do
     recordNum++;
   }
   END {
-    if(status != "success") {
-      printf("'$host',,,,%s\n", status);
+    recordNum--;
+    if (blocked == recordNum) {
+      printf("'$host',,,,%s\n", "blocked");
+    } else if (no_route == recordNum) {
+      printf("'$host',,,,%s\n", "no_route");
     } else {
-      printf("'$host',%.3f,%.3f,%.3f,%s\n",min,maxi,(average/recordNum), status);
+      printf("'$host',%.3f,%.3f,%.3f,%s\n",min,maxi,(average/averageNum), status);
     }
   }
   ' $file
