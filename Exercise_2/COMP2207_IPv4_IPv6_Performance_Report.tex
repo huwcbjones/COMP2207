@@ -116,14 +116,14 @@ My \texttt{summary.sh} script was able to differentiate this when producing the 
 \section{Discussion}
 \subsection*{Results Analysis}
 
-As shown in \Fref{sec:res_breakdown}, of all hosts, only 1\% was unreachable via \IPF whereas, 63\% were unable to be reached via \IPS.
+As shown in \Fref{sec:res_breakdown}, of all hosts, only 1\% was unreachable via {\IPF}, whereas 63\% were unable to be reached via \IPS.
 Out of the 99\% of hosts reachable via \IPF, $16/99$ (16.2\%) of them blocked ping responses whereas only $1/37$ (2.7\%) blocked pings via \IPF.
 The reason for the low percentage of blocked pings on {\IPS} is most probably due to the fact that the sites blocking {\IPF} pings aren't {\IPS} enabled yet.
 For example \texttt{office.com} is the only site accessible from both {\IPF} and {\IPS}, and blocks pings from both protocols.
 
 \Fref{sec:res_ipv4} and \Fref{sec:res_ipv6} shows the average, minimum and maximum pings for all 100 hosts.
 It is quite interesting to see the range between minimum and maximum.
-Overall, there is no definite trend, however it is evident that the higher the average, the high the maximum and minimum pings are.
+Overall, there is no definite trend, however it is evident that the higher the average, the higher the maximum and minimum pings are.
 This is most likely due to geographic location.
 But it appears that the higher the average ping, the greater the range of pings ($ \textrm{max} - \textrm{min}$).
 I presume this is due to an increase in geographic distance, and therefore and increase in available routes to the hosts -
@@ -131,7 +131,7 @@ I presume this is due to an increase in geographic distance, and therefore and i
 
 Overall, there is no trend in {\IPF}/{\IPS} ping times down the top 100 list.
 This is most probably due to the fact that different sites are popular in different countries.
-For example, even though \texttt{baidu.com} is the \nth{4} most popular site, its ping ranks it \nth{73}.
+For example, even though \texttt{baidu.com} is the \nth{4} most popular site, its average ping ranks it \nth{73}.
 All the IP addresses pinged (\texttt{111.13.101.208}, \texttt{123.125.114.144}, \texttt{180.149.132.47} \& \texttt{220.181.57.217})
   indicate that their servers are hosted in China.\footcite{ip_location}
 This means it is physically impossible to be quick due to the physical, geographic distance the packets have to travel.
@@ -162,12 +162,9 @@ Take \texttt{HTTP} for example. Assuming no caching of resources is occurring, \
 All of this requires a lot of time in comparison to the small(er) latencies.
 It is agreed though, that the greater the latency between two computers, the longer the time taken to load content would be.
 However, there are certain situations where this could be disproved.
-For example, a server on a LAN could have a ping < \SI{1}{\milli\second}, however, the application server response time could be upward of minutes
+For example, a server on a LAN could have a ping \textless \SI{1}{\milli\second}, however, the application server response time could be upward of minutes
 depending on the time taken to execute scripts/generate content.
 
 Overall, ping testing is a limited metric that cannot be used solely to identify the performance of a network connected computer.
 It is more a metric to be used with other metrics to build a full picture of a computer's performance.
-
-\newpage
-\printbibliography
 \end{document}
