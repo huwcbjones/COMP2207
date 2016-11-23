@@ -11,7 +11,7 @@ OUTPUT_EXT=".csv"
 ping6=false
 file=''
 
-while getopts 'cif:6' flag; do
+while getopts 'c:i:f:6' flag; do
   case "${flag}" in
     6) ping6=true ;;
     c) COUNT="${OPTARG}" ;;
