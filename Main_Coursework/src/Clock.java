@@ -50,6 +50,7 @@ public class Clock extends NotificationSource {
 
     public static void main(String args[]){
         try {
+            System.out.println(System.getProperty("java.rmi.codebase"));
             String name = "Clock";
             Clock clock = new Clock();
             INotificationSource clockStub = (INotificationSource) UnicastRemoteObject.exportObject(clock, 0);

@@ -1,0 +1,3 @@
+grant codeBase "file:/Users/huw/Documents/University/COMP2207/Main_Coursework/out/production/Main_Coursework/" {
+	permission java.security.AllPermission;
+};
