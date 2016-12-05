@@ -16,10 +16,11 @@ import java.util.ArrayList;
 public class NotificationSource implements INotificationSource {
     private ArrayList<INotificationSink> registeredSinks;
 
-    public NotificationSource(){
+    public NotificationSource() {
         super();
         registeredSinks = new ArrayList<>();
     }
+
     /**
      * Registers a sink to receive notifications
      *
@@ -29,10 +30,11 @@ public class NotificationSource implements INotificationSource {
      */
     @Override
     public boolean register(INotificationSink sink) throws RemoteException {
-        if(registeredSinks.contains(sink)){
+        if (registeredSinks.contains(sink)) {
             return true;
         }
         registeredSinks.add(sink);
+        System.out.println("Registered sink");
         return registeredSinks.contains(sink);
     }
 
@@ -48,7 +50,7 @@ public class NotificationSource implements INotificationSource {
         return registeredSinks.contains(sink);
     }
 
-    protected void sendNotification(Notification notification){
+    protected void sendNotification(Notification notification) {
         registeredSinks.forEach(s -> {
             try {
                 s.notify(notification);

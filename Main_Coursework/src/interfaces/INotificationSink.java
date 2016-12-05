@@ -15,6 +15,7 @@ public interface INotificationSink extends Remote {
 
     /**
      * Notifies a Sink
+     *
      * @param notification Notification
      * @throws RemoteException
      */

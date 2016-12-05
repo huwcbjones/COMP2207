@@ -13,6 +13,7 @@ public interface INotificationSource extends Remote {
 
     /**
      * Registers a sink to receive notifications
+     *
      * @param sink Sink to register
      * @return True if Sink was successfully registered
      * @throws RemoteException
@@ -21,6 +22,7 @@ public interface INotificationSource extends Remote {
 
     /**
      * Returns whether a sink is registered or not
+     *
      * @param sink Sink to check
      * @return True if the sink is registered
      * @throws RemoteException
