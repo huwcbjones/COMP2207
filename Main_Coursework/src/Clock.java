@@ -1,6 +1,7 @@
-import interfaces.INotificationSource;
-import notifications.Notification;
-import notifications.NotificationSource;
+import shared.util.interfaces.INotificationSource;
+import shared.util.notifications.Notification;
+import shared.util.notifications.NotificationSource;
+import shared.util.Log;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -26,12 +27,17 @@ public class Clock extends NotificationSource {
             Clock clock = new Clock();
             INotificationSource clockStub = (INotificationSource) UnicastRemoteObject.exportObject(clock, 0);
 
+            Log.Info("Locating registry...");
             Registry registry = LocateRegistry.getRegistry();
-            registry.rebind(name, clockStub);
-            System.out.println("Clock bound.");
 
-            System.out.println("Starting clock...");
+            Log.Info("Binding clock stub...");
+            registry.rebind(name, clockStub);
+
+            Log.Info("Clock stub bound!");
+
+            Log.Info("Starting clock...");
             clock.runClock();
+            Log.Info("Clock started!");
         } catch (Exception ex) {
             System.err.println("Clock exception: ");
             ex.printStackTrace();
@@ -40,7 +46,7 @@ public class Clock extends NotificationSource {
 
     public void runClock() {
         Thread t = new Thread(new ClockRunner(), "Clock");
-        t.run();
+        t.start();
     }
 
     private class ClockRunner implements Runnable {
@@ -50,7 +56,7 @@ public class Clock extends NotificationSource {
                 Date time;
                 while (true) {
                     time = Calendar.getInstance().getTime();
-                    System.out.println("The time is now: " + time);
+                    Log.Info("The time is now: " + time);
                     sendNotification(new Notification<>(time));
                     try {
                         Thread.sleep(999);

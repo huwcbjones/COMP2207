@@ -1,8 +1,4 @@
-package notifications;
-
-import interfaces.INotificationSink;
-
-import java.rmi.RemoteException;
+package shared.util.notifications;
 
 /**
  * A Notification Sink

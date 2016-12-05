@@ -1,11 +1,13 @@
-import interfaces.INotificationSink;
-import interfaces.INotificationSource;
-import notifications.Notification;
+import shared.util.interfaces.INotificationSink;
+import shared.util.interfaces.INotificationSource;
+import shared.util.notifications.Notification;
+import shared.util.Log;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.UUID;
 
 /**
  * Notification Client
@@ -15,17 +17,22 @@ import java.rmi.server.UnicastRemoteObject;
  */
 public class Client implements INotificationSink {
 
+    private INotificationSource server;
+    private Registry registry;
+    private UUID clientID = null;
+
     public Client(String rmiServer, String source) {
         try {
-            Registry registry = LocateRegistry.getRegistry(rmiServer);
-            INotificationSource server = (INotificationSource) registry.lookup(source);
+            this.registry = LocateRegistry.getRegistry(rmiServer);
+            this.server = (INotificationSource) this.registry.lookup(source);
+
             INotificationSink sink = (INotificationSink) UnicastRemoteObject.exportObject(this, 0);
             if (!server.isRegistered(sink)) {
-                server.register(sink);
+                this.clientID = server.register(sink);
             }
 
         } catch (Exception e) {
-            System.err.println("Client exception:");
+            Log.Fatal("Client exception:");
             e.printStackTrace();
         }
     }
@@ -43,6 +50,22 @@ public class Client implements INotificationSink {
      */
     @Override
     public void notify(Notification notification) throws RemoteException {
-        System.out.println(notification);
+        Log.Info(notification.toString());
+    }
+
+    private class ShutdownThread extends Thread {
+
+        public ShutdownThread() {
+            super("ShutdownThread");
+        }
+
+        @Override
+        public void run() {
+            if(clientID != null) try {
+                server.unRegister(clientID);
+            } catch (RemoteException e) {
+
+            }
+        }
     }
 }

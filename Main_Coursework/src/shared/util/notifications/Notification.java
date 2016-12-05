@@ -1,4 +1,4 @@
-package notifications;
+package shared.util.notifications;
 
 import java.io.Serializable;
 import java.sql.Timestamp;

@@ -1,6 +1,6 @@
-package interfaces;
+package shared.util.interfaces;
 
-import notifications.Notification;
+import shared.util.notifications.Notification;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

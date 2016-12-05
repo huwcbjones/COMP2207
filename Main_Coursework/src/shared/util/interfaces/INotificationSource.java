@@ -1,7 +1,10 @@
-package interfaces;
+package shared.util.interfaces;
+
+import shared.util.exceptions.RegisterFailException;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.UUID;
 
 /**
  * Notification Source Interface
@@ -12,13 +15,13 @@ import java.rmi.RemoteException;
 public interface INotificationSource extends Remote {
 
     /**
-     * Registers a sink to receive notifications
+     * Registers a sink to receive shared.util.notifications
      *
      * @param sink Sink to register
      * @return True if Sink was successfully registered
      * @throws RemoteException
      */
-    boolean register(INotificationSink sink) throws RemoteException;
+    UUID register(INotificationSink sink) throws RemoteException, RegisterFailException;
 
     /**
      * Returns whether a sink is registered or not
@@ -36,4 +39,12 @@ public interface INotificationSource extends Remote {
      * @throws RemoteException
      */
     boolean unRegister(INotificationSink sink) throws RemoteException;
+
+    /**
+     * Unregisters a sink from the source
+     * @param sinkID Sink to unregister
+     * @return True if sink was unregistered
+     * @throws RemoteException
+     */
+    boolean unRegister(UUID sinkID) throws RemoteException;
 }
