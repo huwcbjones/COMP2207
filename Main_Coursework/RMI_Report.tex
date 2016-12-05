@@ -1,0 +1,89 @@
+\documentclass[a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage[bookmarks]{hyperref}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{pdfpages}
+\usepackage[style=verbose]{biblatex}
+\usepackage{filecontents}
+\usepackage{fancyref}
+
+\def \IPF {\texttt{IPv4}}
+\def \IPS {\texttt{IPv6}}
+
+\author{Huw Jones\\27618153\\hcbj1g15@soton.ac.uk}
+\title{COMP2207: Distributed Systems and Networks}
+\def \subtitle {Distributed Notification Framework using Java RMI}
+
+
+\hypersetup{
+  pdfinfo={ee
+    Title={\@title},
+    Subtitle={\@subtitle}
+    Author={\@author},
+  },
+  colorlinks=false,
+  pdfborder=0 0 0,
+}
+
+\begin{filecontents}{bib.bib}
+\end{filecontents}
+\addbibresource{bib.bib}
+\pagestyle{headings}
+
+\begin{document}
+\makeatletter
+\begin{titlepage}
+	\centering
+	{\scshape\LARGE University of Southampton \par}
+	\vspace{2cm}
+    {\huge\bfseries \@title \par}
+    \vspace{1cm}
+	{\scshape\huge \subtitle \par}
+	\vspace{3cm}
+    {\Large
+    \begin{tabular}{c}
+      \@author
+    \end{tabular} \\}
+  \vspace{6cm}
+    {\Large
+    \today
+    }
+\end{titlepage}
+\makeatother
+\newpage
+
+%%
+%% SECTION: Notification Framework
+%%
+\section{Notification Framework}
+
+%%
+%% SECTION: The Application
+%%
+\section{Application}
+
+%%
+%% SECTION: Sources and Sinks
+%%
+\section{Sources \& Sinks}
+
+%%
+%% SECTION: Lost Connections
+%%
+\section{Lost Connection}
+
+%%
+%% SECTION: Future Work
+%%
+\section{Future Work}
+
+%%
+%% SECTION: Conclusions
+%%
+\section{Conclusions}
+
+\end{document}
