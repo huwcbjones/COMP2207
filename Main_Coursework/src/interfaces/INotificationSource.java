@@ -28,4 +28,12 @@ public interface INotificationSource extends Remote {
      * @throws RemoteException
      */
     boolean isRegistered(INotificationSink sink) throws RemoteException;
+
+    /**
+     * Unregisters a sink from the source
+     * @param sink Sink to unregister
+     * @return True if sink was unregistered
+     * @throws RemoteException
+     */
+    boolean unRegister(INotificationSink sink) throws RemoteException;
 }

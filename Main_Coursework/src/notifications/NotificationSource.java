@@ -30,12 +30,11 @@ public class NotificationSource implements INotificationSource {
      */
     @Override
     public boolean register(INotificationSink sink) throws RemoteException {
-        if (registeredSinks.contains(sink)) {
-            return true;
+        if (isRegistered(sink)) {
+            registeredSinks.add(sink);
+            System.out.println("Registered sink");
         }
-        registeredSinks.add(sink);
-        System.out.println("Registered sink");
-        return registeredSinks.contains(sink);
+        return isRegistered(sink);
     }
 
     /**
@@ -48,6 +47,21 @@ public class NotificationSource implements INotificationSource {
     @Override
     public boolean isRegistered(INotificationSink sink) throws RemoteException {
         return registeredSinks.contains(sink);
+    }
+
+    /**
+     * Unregisters a sink from the source
+     *
+     * @param sink Sink to unregister
+     * @return True if sink was unregistered
+     * @throws RemoteException
+     */
+    @Override
+    public boolean unRegister(INotificationSink sink) throws RemoteException {
+        if(isRegistered(sink)){
+            this.registeredSinks.remove(sink);
+        }
+        return isRegistered(sink);
     }
 
     protected void sendNotification(Notification notification) {
