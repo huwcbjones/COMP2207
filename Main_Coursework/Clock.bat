@@ -6,6 +6,5 @@ popd %cd%
 CD /D %cd%
 java -cp "out\production\Main_Coursework" ^
 	-Djava.rmi.server.codebase=file:/E:/Documents/University/COMP2207/Main_Coursework/out/production/Main_Coursework/ ^
-	-Djava.rmi.server.hostname=localhost ^
 	-Djava.security.policy=server.policy ^
 	Clock %*
