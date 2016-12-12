@@ -1,4 +1,4 @@
-package shared.util.exceptions;
+package shared.exceptions;
 
 /**
  * Thrown when a sink failed to register
