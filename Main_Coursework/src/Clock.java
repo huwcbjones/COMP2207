@@ -1,8 +1,9 @@
-import shared.util.interfaces.INotificationSource;
-import shared.util.notifications.Notification;
-import shared.util.notifications.NotificationSource;
+import shared.interfaces.INotificationSource;
+import shared.notifications.Notification;
+import shared.notifications.NotificationSource;
 import shared.util.Log;
 
+import java.net.BindException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -18,30 +19,20 @@ import java.util.Date;
 public class Clock extends NotificationSource {
 
     public Clock() {
-        super();
+        super("Clock");
+        try {
+            this.bind();
+
+            Log.Info("Clock starting...");
+            this.runClock();
+            Log.Info("Clock started!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String args[]) {
-        try {
-            String name = "Clock";
-            Clock clock = new Clock();
-            INotificationSource clockStub = (INotificationSource) UnicastRemoteObject.exportObject(clock, 0);
-
-            Log.Info("Locating registry...");
-            Registry registry = LocateRegistry.getRegistry();
-
-            Log.Info("Binding clock stub...");
-            registry.rebind(name, clockStub);
-
-            Log.Info("Clock stub bound!");
-
-            Log.Info("Starting clock...");
-            clock.runClock();
-            Log.Info("Clock started!");
-        } catch (Exception ex) {
-            System.err.println("Clock exception: ");
-            ex.printStackTrace();
-        }
+        Clock clock = new Clock();
     }
 
     public void runClock() {
@@ -57,7 +48,7 @@ public class Clock extends NotificationSource {
                 while (true) {
                     time = Calendar.getInstance().getTime();
                     Log.Info("The time is now: " + time);
-                    sendNotification(new Notification<>(time));
+                    sendNotification(new Notification<>("Clock", time));
                     try {
                         Thread.sleep(999);
                     } catch (InterruptedException e) {

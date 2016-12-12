@@ -25,11 +25,11 @@ import java.util.stream.Collectors;
  */
 public class SourceProxySource extends NotificationSource implements INotificationSourceProxy {
 
-    private static final String sourceID = "SourceProxy";
     private HashMap<String, INotificationSource> sourceMap;
     private Registry registry;
 
     public SourceProxySource() {
+        super("SourceProxy");
         sourceMap = new HashMap<>();
 
         try {
@@ -73,16 +73,16 @@ public class SourceProxySource extends NotificationSource implements INotificati
      * @param sourceID ID to register as
      * @param source   Source to register
      * @throws RemoteException
-     * @throws RegisterFailException
      */
-    public void register(String sourceID, INotificationSource source) throws RemoteException, RegisterFailException {
+    public void register(String sourceID, INotificationSource source) throws RemoteException {
         // Store source
         sourceMap.put(sourceID, source);
 
+        // Export object (the received object should have already been exported, but better make sure)
         INotificationSource sourceStub = (INotificationSource) UnicastRemoteObject.exportObject(source, 0);
 
+        // Bind the source, then tell all sinks there is a new source
         registry.rebind(sourceID, sourceStub);
-
         updateSinks();
     }
 
