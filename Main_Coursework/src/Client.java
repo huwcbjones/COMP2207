@@ -1,7 +1,8 @@
-import shared.util.interfaces.INotificationSink;
-import shared.util.interfaces.INotificationSource;
-import shared.util.notifications.Notification;
+import shared.interfaces.INotificationSink;
+import shared.interfaces.INotificationSource;
+import shared.notifications.Notification;
 import shared.util.Log;
+import shared.util.UUIDUtils;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -19,17 +20,16 @@ public class Client implements INotificationSink {
 
     private INotificationSource server;
     private Registry registry;
-    private UUID clientID = null;
+    private UUID clientID = UUIDUtils.Base64StringToUUID("7pc27MVYQkiJcqZjjqE6qg==");
 
     public Client(String rmiServer, String source) {
         try {
             this.registry = LocateRegistry.getRegistry(rmiServer);
             this.server = (INotificationSource) this.registry.lookup(source);
 
+
             INotificationSink sink = (INotificationSink) UnicastRemoteObject.exportObject(this, 0);
-            if (!server.isRegistered(sink)) {
-                this.clientID = server.register(sink);
-            }
+            server.register(this.clientID, sink);
 
         } catch (Exception e) {
             Log.Fatal("Client exception:");
