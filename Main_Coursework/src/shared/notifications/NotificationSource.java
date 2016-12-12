@@ -8,7 +8,6 @@ import shared.interfaces.INotificationSourceProxy;
 import shared.util.Log;
 import shared.util.UUIDUtils;
 
-import java.net.BindException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -52,35 +51,45 @@ public abstract class NotificationSource implements INotificationSource {
     }
 
     public void bind(String registryServer, int registryPort) throws ConnectException {
+        Registry registry;
         try {
             Log.Info("Locating registry...");
-            Registry registry = LocateRegistry.getRegistry(registryServer, registryPort);
+            registry = LocateRegistry.getRegistry(registryServer, registryPort);
             registry.list();
             Log.Info("Registry found!");
-
-            INotificationSource sourceStub = (INotificationSource) UnicastRemoteObject.exportObject(this, 0);
-
-            Log.Info("Registering " + this.sourceID + "...");
-
-            // Try to register using the proxy
-            try {
-                INotificationSourceProxy proxy = (INotificationSourceProxy) registry.lookup("SourceProxy");
-                proxy.register(sourceID, sourceStub);
-                Log.Info("Registered " + this.sourceID + "!");
-
-            } catch (NotBoundException ex){
-
-                // If the proxy is not available and the rmi server is running locally, bind straight to the local registry
-                // Clients will still be able to access the source through specifying the SourceID, but they won't get notified when
-                // Sources register/unregister with the proxy server.
-
-                if(registryServer.equals("localhost")) {
-                    registry.rebind(sourceID, sourceStub);
-                    Log.Info("Registered " + this.sourceID + "!");
-                }
-            }
         } catch (RemoteException e) {
-            throw new ConnectException("Failed to register source.", e);
+            throw new ConnectException(String.format("Failed to connect to RMI registry @%s:%d", registryServer, registryPort), e);
+        }
+
+        INotificationSource sourceStub;
+        try {
+            Log.Info("Registering " + this.sourceID + "...");
+            sourceStub = (INotificationSource) UnicastRemoteObject.exportObject(this, 0);
+        } catch (RemoteException ex) {
+            throw new ConnectException(String.format("Failed to register %s.", sourceID), ex);
+        }
+
+        try {
+            // Try to register using the proxy
+            INotificationSourceProxy proxy = (INotificationSourceProxy) registry.lookup("SourceProxy");
+            proxy.register(sourceID, sourceStub);
+            Log.Info("Registered " + this.sourceID + "!");
+
+        } catch (RemoteException | NotBoundException ex) {
+            // If the proxy is not available and the rmi server is running locally, bind straight to the local registry
+            // Clients will still be able to access the source through specifying the SourceID, but they won't get notified when
+            // Sources register/unregister with the proxy server.
+            if (!registryServer.equals("localhost")) {
+                throw new ConnectException("Failed to register source (using SourceProxy).", ex);
+            }
+
+            Log.Info(String.format("Failed to register %s (using SourceProxy)... attempting straight bind", sourceID));
+            try {
+                registry.rebind(sourceID, sourceStub);
+                Log.Info("Registered " + this.sourceID + "!");
+            } catch (RemoteException e) {
+                throw new ConnectException("Failed to register source.", e);
+            }
         }
     }
 

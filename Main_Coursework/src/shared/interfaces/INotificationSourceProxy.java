@@ -20,7 +20,7 @@ public interface INotificationSourceProxy extends INotificationSource {
      * @throws RemoteException
      * @throws RegisterFailException
      */
-    public void register(String sourceID, INotificationSource source) throws RemoteException, RegisterFailException;
+    public void register(String sourceID, INotificationSource source) throws RemoteException;
 
     /**
      * Unregisters a source on this RMI Registry for sinks to access
