@@ -31,8 +31,8 @@ public class SourceProxySource extends NotificationSource implements INotificati
     public SourceProxySource() {
         super("SourceProxy");
         sourceMap = new HashMap<>();
-
-        try {
+        bind();
+        /*try {
             INotificationSourceProxy sourceStub = (INotificationSourceProxy) UnicastRemoteObject.exportObject(this, 0);
 
             Log.Info("Locating registry...");
@@ -43,7 +43,7 @@ public class SourceProxySource extends NotificationSource implements INotificati
 
         } catch (Exception ex) {
             Log.Fatal(ex.getMessage());
-        }
+        }*/
         if (registry == null) {
             System.exit(1);
         }
