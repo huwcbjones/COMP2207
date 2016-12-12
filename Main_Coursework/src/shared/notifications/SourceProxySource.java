@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 public class SourceProxySource extends NotificationSource implements INotificationSourceProxy {
 
     private HashMap<String, INotificationSource> sourceMap;
-    private Registry registry;
 
     public SourceProxySource() {
         super("SourceProxy");

@@ -27,6 +27,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public abstract class NotificationSource implements INotificationSource {
     /**
+     * RMI Registry Server
+     */
+    protected Registry registry;
+
+    /**
      * ID of the source (used to bind to the registry server)
      */
     protected final String sourceID;
@@ -51,7 +56,6 @@ public abstract class NotificationSource implements INotificationSource {
     }
 
     public void bind(String registryServer, int registryPort) throws ConnectException {
-        Registry registry;
         try {
             Log.Info("Locating registry...");
             registry = LocateRegistry.getRegistry(registryServer, registryPort);
