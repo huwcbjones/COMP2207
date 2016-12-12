@@ -1,15 +1,14 @@
-package shared.util.notifications;
+package shared.notifications;
 
-import shared.util.exceptions.RegisterFailException;
-import shared.util.interfaces.INotificationSink;
-import shared.util.interfaces.INotificationSource;
+import shared.exceptions.RegisterFailException;
+import shared.interfaces.INotificationSink;
+import shared.interfaces.INotificationSource;
 import shared.util.Log;
 import shared.util.UUIDUtils;
 
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -20,7 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Huw Jones
  * @since 02/12/2016
  */
-public class NotificationSource implements INotificationSource {
+public abstract class NotificationSource implements INotificationSource {
     /**
      * Map of sinks (UUID=>sink) that are registered to this source
      */
@@ -30,7 +29,7 @@ public class NotificationSource implements INotificationSource {
      * Data structure to keep shared.util.notifications that cannot be delivered to sinks.
      * 1 queue for each sink.
      */
-    private HashMap<UUID, Queue<Notification>> notificationQueue;
+    private HashMap<UUID, ConcurrentLinkedQueue<Notification>> notificationQueue;
 
     public NotificationSource() {
         super();
@@ -48,18 +47,36 @@ public class NotificationSource implements INotificationSource {
      */
     @Override
     public UUID register(INotificationSink sink) throws RemoteException, RegisterFailException {
+        UUID id = getUUID();
+        register(id, sink);
+        return id;
+    }
 
-        if (!isRegistered(sink)) {
+    /**
+     * Registers a sink to receive shared.util.notifications
+     *
+     * @param sinkID ID of sink
+     * @param sink   Sink to register
+     * @return True if Sink was successfully registered
+     * @throws RemoteException
+     */
+    @Override
+    public boolean register(UUID sinkID, INotificationSink sink) throws RemoteException, RegisterFailException {
+        if (!isRegistered(sinkID)) {
             try {
-                UUID ID = getUUID();
-                this.registeredSinks.put(ID, sink);
-                this.notificationQueue.put(ID, new ConcurrentLinkedQueue<>());
-                Log.Info("Registered sink: " + UUIDUtils.UUIDToBase64String(ID));
-
-                return ID;
+                if(sinkID == null) sinkID = UUID.randomUUID();
+                this.registeredSinks.put(sinkID, sink);
+                this.notificationQueue.put(sinkID, new ConcurrentLinkedQueue<>());
+                Log.Info("Registered sink: " + UUIDUtils.UUIDToBase64String(sinkID));
+                return true;
             } catch (Exception e) {
                 Log.Error(e.toString());
             }
+        } else {
+            this.registeredSinks.put(sinkID, sink);
+            Log.Info("Sink reregistered: " + UUIDUtils.UUIDToBase64String(sinkID));
+            sendQueue(sinkID);
+            return true;
         }
 
         throw new RegisterFailException();
@@ -175,5 +192,20 @@ public class NotificationSource implements INotificationSource {
      */
     private void queueNotification(UUID sinkID, Notification notification) {
         this.notificationQueue.get(sinkID).add(notification);
+    }
+
+    private void sendQueue(UUID sinkID) {
+        INotificationSink sink = this.registeredSinks.get(sinkID);
+        ConcurrentLinkedQueue<Notification> queue = this.notificationQueue.get(sinkID);
+        Notification notification;
+        while((notification = queue.peek()) != null){
+            try {
+                sink.notify(notification);
+                queue.remove();
+            } catch (RemoteException e) {
+                Log.Warn("Failed to send message to: " + UUIDUtils.UUIDToBase64String(sinkID));
+                break;
+            }
+        }
     }
 }
