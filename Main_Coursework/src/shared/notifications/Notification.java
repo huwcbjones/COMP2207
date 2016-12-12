@@ -1,4 +1,4 @@
-package shared.util.notifications;
+package shared.notifications;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -13,20 +13,27 @@ import java.util.Calendar;
 public class Notification<T extends Serializable> implements Serializable {
     private static long serialUID = -783483475;
 
+    private final String source;
     private final T data;
     private final Timestamp time;
     private final PRIORITY priority;
 
-    public Notification(T data) {
+    public Notification(String source, T data) {
+        this.source = source;
         this.priority = PRIORITY.Normal;
         this.data = data;
         this.time = new Timestamp(Calendar.getInstance().getTime().getTime());
     }
 
-    public Notification(PRIORITY priority, T data) {
+    public Notification(String source, PRIORITY priority, T data) {
+        this.source = source;
         this.priority = priority;
         this.data = data;
         this.time = new Timestamp(Calendar.getInstance().getTime().getTime());
+    }
+
+    public String getSource() {
+        return source;
     }
 
     @Override
