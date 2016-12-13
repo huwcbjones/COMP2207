@@ -1,7 +1,6 @@
 package client.components;
 
 import client.GifClient;
-import client.NotificationSink;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,7 +25,7 @@ public class GifWindow extends JFrame implements AutoCloseable {
         // Create GUI
         this.sourceID = sourceID;
         this.setMinimumSize(new Dimension(400, 300));
-        this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        this.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
         this.addWindowListener(new WindowHandler());
 
         imagePanel = new ImagePanel();
@@ -59,8 +58,7 @@ public class GifWindow extends JFrame implements AutoCloseable {
          */
         @Override
         public void windowClosing(WindowEvent e) {
-            NotificationSink sink = GifClient.getSink();
-            sink.disconnectSource(sourceID);
+            GifClient.sourceDisconnect(sourceID);
         }
     }
 }

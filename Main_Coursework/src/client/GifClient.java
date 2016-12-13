@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GifClient extends JFrame {
 
+    private static GifClient gifClient;
     private static NotificationSink sink;
     JPanel panel_gui;
     JButton button_disconnect;
@@ -45,6 +46,7 @@ public class GifClient extends JFrame {
 
     public GifClient() {
         super("RMI Client");
+        GifClient.gifClient = this;
         try {
             GifClient.sink = new NotificationSink();
         } catch (RemoteException ex) {
@@ -76,6 +78,10 @@ public class GifClient extends JFrame {
         this.setVisible(true);
     }
 
+    private static GifClient getGifClient(){
+        return gifClient;
+    }
+
     /**
      * Gets the sink for this client
      *
@@ -83,6 +89,15 @@ public class GifClient extends JFrame {
      */
     public static NotificationSink getSink() {
         return sink;
+    }
+
+    public static void sourceDisconnect(String sourceID){
+        NotificationSink sink = getSink();
+        sink.disconnectSource(sourceID);
+
+        GifWindow w = gifClient.gifWindows.get(sourceID);
+        gifClient.gifWindows.remove(sourceID);
+        w.dispose();
     }
 
     /**
