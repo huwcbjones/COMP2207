@@ -1,5 +1,6 @@
 package shared.notifications;
 
+import javafx.util.Pair;
 import shared.exceptions.ConnectException;
 import shared.exceptions.RegisterFailException;
 import shared.interfaces.INotificationSink;
@@ -13,6 +14,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -50,6 +52,7 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
      * @param port   Port to connect to
      * @throws ConnectException Thrown if failed to connect
      */
+    @SuppressWarnings("unchecked")
     public void connectRMI(String server, int port) throws ConnectException {
         registry = RMIUtils.connect(server, port);
 
@@ -57,6 +60,7 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
 
         try {
             sourceProxy = (INotificationSource) registry.lookup("SourceProxy");
+            callbackRegistry.put("SourceProxy", (e) -> Log.Info("Received list of sources (" + ((List<Pair<String,INotificationSource>>)e.getData()).size() + ")"));
             sourceProxy.register(sinkID, this);
         } catch (RemoteException | NotBoundException | RegisterFailException ex) {
             throw new ConnectException("Failed to register with SourceProxy.", ex);

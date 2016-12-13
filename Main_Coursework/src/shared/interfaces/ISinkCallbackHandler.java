@@ -8,9 +8,7 @@ import shared.notifications.Notification;
  * @author Huw Jones
  * @since 13/12/2016
  */
-public class ISinkCallbackHandler {
+public interface ISinkCallbackHandler {
 
-    public void notify(Notification notification){
-
-    }
+    void notify(Notification notification);
 }
