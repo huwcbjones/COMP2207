@@ -3,7 +3,6 @@ package client;
 import client.components.GifWindow;
 import client.components.HintTextFieldUI;
 import javafx.util.Pair;
-import shared.Notification;
 import shared.exceptions.ConnectException;
 import shared.interfaces.INotificationSource;
 import shared.util.ImageUtils;
@@ -27,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GifClient extends JFrame {
 
-    private static Sink sink = null;
+    private static NotificationSink sink;
     JPanel panel_gui;
     JButton button_disconnect;
     JButton button_connect;
@@ -47,7 +46,7 @@ public class GifClient extends JFrame {
     public GifClient() {
         super("RMI Client");
         try {
-            GifClient.sink = new Sink();
+            GifClient.sink = new NotificationSink();
         } catch (RemoteException ex) {
             Log.Fatal("Failed to load client: " + ex.getMessage());
             ex.printStackTrace();
@@ -62,24 +61,33 @@ public class GifClient extends JFrame {
         this.setLocationRelativeTo(null);
         this.setResizable(true);
 
-        if(Config.getRmiServer() != null){
+        // Handle autoconnect
+        if (Config.getRmiServer() != null) {
             text_server.setText(Config.getRmiServer());
         }
-        if(Config.getRmiPort() != null){
+        if (Config.getRmiPort() != null) {
             text_port.setText(Config.getRmiPort().toString());
         }
 
-        if(Config.isAutoconnect()){
+        if (Config.isAutoconnect()) {
             rmiConnectListener.actionPerformed(null);
         }
 
         this.setVisible(true);
     }
 
-    public static Sink getSink() {
+    /**
+     * Gets the sink for this client
+     *
+     * @return Sink
+     */
+    public static NotificationSink getSink() {
         return sink;
     }
 
+    /**
+     * Initialise the UI - lots of Swing
+     */
     private void initUI() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -177,16 +185,27 @@ public class GifClient extends JFrame {
 
     }
 
+    /**
+     * Initialise event listeners
+     */
     private void initEventListeners() {
         this.button_connect.addActionListener(rmiConnectListener);
+
         this.button_disconnect.addActionListener(e -> {
-            gifWindows.entrySet().forEach(w -> {w.getValue().dispose(); gifWindows.remove(w.getKey());});
+            // Close all open GifWindows
+            gifWindows.entrySet().forEach(w -> {
+                w.getValue().dispose();
+                gifWindows.remove(w.getKey());
+            });
+
             if (sink.isConnectedSource()) {
                 sink.disconnectAllSource();
             }
             if (sink.isConnectedRMIProxy()) {
                 sink.disconnectRMIProxy();
             }
+
+            // Set form controls to default state
             button_disconnect.setEnabled(false);
             text_source.setEnabled(false);
             combo_source.setEnabled(false);
@@ -194,6 +213,7 @@ public class GifClient extends JFrame {
             text_server.setEnabled(true);
             text_port.setEnabled(true);
 
+            // Set action listeners back to default state
             button_connect.removeActionListener(sourceConnectListener);
             button_connect.addActionListener(rmiConnectListener);
 
@@ -201,19 +221,30 @@ public class GifClient extends JFrame {
         });
     }
 
-    private void sourceConnect(){
+    /**
+     * Connects to a source as specified by the combo box/text field
+     */
+    private void sourceConnect() {
         sourceConnect(null);
     }
 
-    private void sourceConnect(String source){
+    /**
+     * Connects to the source with the specified SourceID
+     *
+     * @param source SourceID of the source to connec to
+     */
+    private void sourceConnect(String source) {
         try {
-            if(source == null) {
+            // If null, fallback to getting the SourceID from the text field/combo box
+            if (source == null) {
                 if (combo_source.isVisible()) {
                     source = (String) combo_source.getSelectedItem();
                 } else if (text_source.isVisible()) {
                     source = text_source.getText();
                 }
             }
+
+            // If there is no specified source, inform the user and return
             if (source == null || source.length() == 0) {
                 JOptionPane.showMessageDialog(GifClient.this,
                         "Please enter/select the ID of the source you'd like to connect to.",
@@ -221,12 +252,15 @@ public class GifClient extends JFrame {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            if(gifWindows.containsKey(source)){
+
+            // Otherwise, check if we're already connected, if so, bring the window to the front
+            if (gifWindows.containsKey(source)) {
                 GifWindow window = gifWindows.get(source);
                 window.setVisible(true);
                 window.toFront();
                 window.repaint();
             } else {
+                // Else, connect to the source
                 SourceConnectThread t = new SourceConnectThread(source);
                 t.start();
             }
@@ -238,6 +272,9 @@ public class GifClient extends JFrame {
         }
     }
 
+    /**
+     * Thread to Connect to the RMI Server/Proxy Server
+     */
     private class ConnectThread extends Thread {
         private String rmiServer;
         private int port;
@@ -249,10 +286,18 @@ public class GifClient extends JFrame {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public void run() {
             // Try to connect to SourceProxy
             try {
-                sink.connectRMIProxy(rmiServer, port);
+                // Connect to proxy server with a callback to update the combo box list
+                sink.connectRMIProxy(rmiServer, port, (n) -> {
+                    ArrayList<Pair<String, INotificationSource>> data = (ArrayList<Pair<String, INotificationSource>>) n.getData();
+                    SwingUtilities.invokeLater(() -> {
+                        combo_source.removeAllItems();
+                        data.stream().map(Pair::getKey).forEach(combo_source::addItem);
+                    });
+                });
                 SwingUtilities.invokeLater(() -> {
                     combo_source.setVisible(true);
                     text_source.setVisible(false);
@@ -261,7 +306,9 @@ public class GifClient extends JFrame {
                 Log.Error(ex.getMessage() + " " + ex.getCause().getMessage());
             }
 
-            if(!sink.isConnectedRMI()){
+            // The RMI server could be running, but not the proxy
+            if (!sink.isConnectedRMI()) {
+                // RMI server isn't running
                 SwingUtilities.invokeLater(() -> {
                     button_connect.setEnabled(true);
                     button_disconnect.setEnabled(false);
@@ -277,34 +324,34 @@ public class GifClient extends JFrame {
                 return;
             }
 
-            // If not, just connect to the registry and let the user type the source they want to connect to
-            if (!sink.isConnectedRMIProxy()) {
-                if (!sink.isConnectedRMI()) {
-                    Log.Info("Connecting to RMI registry...");
-                    try {
-                        sink.connectRMI(rmiServer, port);
-                    } catch (ConnectException ex) {
-                        SwingUtilities.invokeLater(() -> {
-                            button_connect.setEnabled(true);
-                            button_disconnect.setEnabled(false);
-                            combo_source.setEnabled(false);
-                            text_server.setEnabled(true);
-                            text_port.setEnabled(true);
-                            button_connect.addActionListener(rmiConnectListener);
-                            button_connect.removeActionListener(sourceConnectListener);
-                            JOptionPane.showMessageDialog(
-                                    GifClient.this,
-                                    ex.getMessage(),
-                                    "Failed to connect.", JOptionPane.ERROR_MESSAGE);
-                        });
-                    }
-                } else {
+            // Now we know the Proxy Server isn't running, so check that we are connected to the RMI Registry - if not, try to connect.
+            // The client can't get a list of sources that are registered, so let them manually type into a text box
+            if (!sink.isConnectedRMI()) {
+                Log.Info("Connecting to RMI registry...");
+                try {
+                    sink.connectRMI(rmiServer, port);
+                } catch (ConnectException ex) {
                     SwingUtilities.invokeLater(() -> {
-                        combo_source.setVisible(false);
-                        text_source.setVisible(true);
+                        button_connect.setEnabled(true);
+                        button_disconnect.setEnabled(false);
+                        combo_source.setEnabled(false);
+                        text_server.setEnabled(true);
+                        text_port.setEnabled(true);
+                        button_connect.addActionListener(rmiConnectListener);
+                        button_connect.removeActionListener(sourceConnectListener);
+                        JOptionPane.showMessageDialog(
+                                GifClient.this,
+                                ex.getMessage(),
+                                "Failed to connect.", JOptionPane.ERROR_MESSAGE);
                     });
                 }
+            } else {
+                SwingUtilities.invokeLater(() -> {
+                    combo_source.setVisible(false);
+                    text_source.setVisible(true);
+                });
             }
+
 
             Log.Info("Connected to  RMI registry!");
 
@@ -323,12 +370,18 @@ public class GifClient extends JFrame {
                 text_port.setEnabled(false);
             });
 
-            for(String source: Config.getSources()){
-                sourceConnect(source);
+            // If autoconnect, then connect to all the sources
+            if(Config.isAutoconnect()) {
+                for (String source : Config.getSources()) {
+                    sourceConnect(source);
+                }
             }
         }
     }
 
+    /**
+     * Thread to Connect to a Source
+     */
     private class SourceConnectThread extends Thread {
 
         private String sourceID;
@@ -340,7 +393,10 @@ public class GifClient extends JFrame {
 
         @Override
         public void run() {
+            // Create a window
             GifWindow window = new GifWindow(sourceID);
+
+            // Disable GUI temporarily
             SwingUtilities.invokeLater(() -> {
                 button_connect.setEnabled(false);
                 text_source.setEnabled(false);
@@ -348,8 +404,7 @@ public class GifClient extends JFrame {
             });
 
             try {
-
-
+                // Connect to the source with a callback to update the GifWindow
                 sink.connectSource(sourceID, n -> SwingUtilities.invokeLater(() -> {
                     try {
                         window.displayImage(ImageUtils.bytesToImage((byte[]) n.getData()));
@@ -358,9 +413,15 @@ public class GifClient extends JFrame {
                         e1.printStackTrace();
                     }
                 }));
+
+                // Store the window
                 gifWindows.put(sourceID, window);
+
+                // Display window
                 SwingUtilities.invokeLater(() -> window.setVisible(true));
+
             } catch (ConnectException ex) {
+                // Inform user we failed to connect, then destroy the GifWindow as we have no use for it
                 SwingUtilities.invokeLater(() -> {
                     window.dispose();
                     JOptionPane.showMessageDialog(
@@ -369,6 +430,7 @@ public class GifClient extends JFrame {
                             "Failed to connect", JOptionPane.ERROR_MESSAGE);
                 });
             } finally {
+                // Now re-enable the GUI
                 SwingUtilities.invokeLater(() -> {
                     button_connect.setEnabled(true);
                     text_source.setEnabled(true);
@@ -378,32 +440,9 @@ public class GifClient extends JFrame {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private class Sink extends NotificationSink {
-
-        public Sink() throws RemoteException {
-            super();
-        }
-
-        /**
-         * Notifies a Sink
-         *
-         * @param notification Notification
-         * @throws RemoteException
-         */
-        @Override
-        public void notify(Notification notification) throws RemoteException {
-            super.notify(notification);
-            if (notification.getSource().equals("sourceproxy")) {
-                ArrayList<Pair<String, INotificationSource>> data = (ArrayList<Pair<String, INotificationSource>>) notification.getData();
-                SwingUtilities.invokeLater(() -> {
-                    combo_source.removeAllItems();
-                    data.stream().map(Pair::getKey).forEach(combo_source::addItem);
-                });
-            }
-        }
-    }
-
+    /**
+     * Connects to an RMI server when the connect button is pressed
+     */
     private class RMIConnect implements ActionListener {
         /**
          * Invoked when an action occurs.
@@ -413,13 +452,18 @@ public class GifClient extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             try {
+                // Get the text field details and trim them
+                // Set default values to localhost:1099
                 String server = text_server.getText().trim();
                 server = (server.length() == 0 ? "localhost" : server);
                 String intStr = text_port.getText().trim();
                 intStr = (intStr.length() == 0 ? "1099" : intStr);
 
+                // Do the connect
                 Thread t = new ConnectThread(server, Integer.parseInt(intStr));
                 t.start();
+
+                // Disable GUI temporarily
                 button_connect.setEnabled(false);
                 button_disconnect.setEnabled(false);
                 combo_source.setEnabled(false);
@@ -427,6 +471,7 @@ public class GifClient extends JFrame {
                 text_port.setEnabled(false);
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
+                    // Re-enable GUI
                     button_connect.setEnabled(true);
                     button_disconnect.setEnabled(false);
                     combo_source.setEnabled(false);
@@ -441,6 +486,9 @@ public class GifClient extends JFrame {
         }
     }
 
+    /**
+     * Connects to a Source when the connect button is pressed
+     */
     private class SourceConnect implements ActionListener {
         /**
          * Invoked when an action occurs.

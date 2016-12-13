@@ -8,7 +8,8 @@ import java.awt.event.FocusListener;
 
 /**
  * TextFieldUI, with input hint (like HTML text inputs)
- * Taken from: http://stackoverflow.com/a/4962829/5909019
+ * Inspired from: http://stackoverflow.com/a/4962829/5909019
+ * and edited/tweaked by Huw Jones
  *
  * @author Huw Jones
  * @since 01/03/2016

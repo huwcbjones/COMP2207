@@ -33,56 +33,104 @@ public class Config {
     private static String rmiServer = null;
     private static Integer rmiPort = null;
 
+    /**
+     * Get the RMI Server hostname
+     * @return Hostname
+     */
     public static String getRmiServer() {
         return rmiServer;
     }
 
+    /**
+     * Set the RMI server hostname
+     * @param rmiServer Hostname
+     */
     public static void setRmiServer(String rmiServer) {
         Config.rmiServer = rmiServer;
         saveConfig();
     }
 
+    /**
+     * Get the RMI server port
+     * @return Port number
+     */
     public static Integer getRmiPort() {
         return rmiPort;
     }
 
+    /**
+     * Set the RMI server port
+     * @param rmiPort Port number
+     */
     public static void setRmiPort(Integer rmiPort) {
         Config.rmiPort = rmiPort;
         saveConfig();
     }
 
+    /**
+     * Get the client UUID
+     * @return Client UUID
+     */
     public static UUID getClientID() {
         return clientID;
     }
 
+    /**
+     * Set the client UUID
+     * @param clientID UUID
+     */
     public static void setClientID(UUID clientID) {
         Config.clientID = clientID;
         saveConfig();
     }
 
+    /**
+     * Get a list of sources that are known to the client
+     * @return List of sources
+     */
     public static List<String> getSources() {
         return new ArrayList<>(sources);
     }
 
+    /**
+     * Add a source to the list of sources
+     * @param source Source to add
+     */
     public static void addSource(String source) {
         sources.add(source);
         saveConfig();
     }
 
+    /**
+     * Remove a source from the list of sources
+     * @param source Source to remove
+     */
     public static void removeSource(String source) {
         if (sources.contains(source)) sources.remove(source);
         saveConfig();
     }
 
+    /**
+     * Returns whether the client should automatically connect to the RMI server (as per the server declaration),
+     * and any sources (as per the source declarations).
+     * @return True if the client should autoconnect
+     */
     public static boolean isAutoconnect() {
         return autoconnect;
     }
 
+    /**
+     * Sets whether or not the client should autoconnect to the RMI server/sources.
+     * @param autoconnect True if the client should autoconnect
+     */
     public static void setAutoconnect(boolean autoconnect) {
         Config.autoconnect = autoconnect;
         saveConfig();
     }
 
+    /**
+     * Saves the config to the file specified by configLocation.
+     */
     public static void saveConfig() {
         try {
             saveConfig(configLocation);
@@ -91,6 +139,11 @@ public class Config {
         }
     }
 
+    /**
+     * Saves the config file to a specified location
+     * @param location Location to save the config file
+     * @throws FileSystemException Thrown if there was an error whilst saving the config file
+     */
     public static void saveConfig(String location) throws FileSystemException {
         File configFile = new File(location);
         try {
@@ -112,6 +165,10 @@ public class Config {
         }
     }
 
+    /**
+     * Creates a string from the current configuration that can be loaded at a later date.
+     * @return Config string
+     */
     private static String getConfigString() {
         StringBuilder b = new StringBuilder();
         if (clientID != null) {
@@ -141,15 +198,26 @@ public class Config {
         return b.toString();
     }
 
+    /**
+     * Loads the config from the default location
+     */
     public static void loadConfig() {
         loadConfig(configLocation);
     }
 
+    /**
+     * Loads the config from a specified location
+     * @param location Location to load config from
+     */
     public static void loadConfig(String location) {
         try {
             String configFile = new String(Files.readAllBytes(Paths.get(location)));
+
+            // Split file by semicolon, newline
             String[] statements = configFile.split(";(\n|\r\n|\r)");
             int statementNumber = 1;
+
+            // Process each statement
             for (String e : statements) {
                 e = e.trim();
                 if (e.length() == 0) continue;
@@ -171,17 +239,31 @@ public class Config {
         }
     }
 
+    /**
+     * Loads a config statement and updates the config options
+     * @param statement Statement to load
+     * @param number Statement number (for error logging)
+     * @throws ParseException Thrown if the statement could not be processed
+     */
     private static void processStatement(String statement, int number) throws ParseException {
         if (statement.substring(0, 2).equals("//")) {
             return;
         }
+
+        // Separate the declaration, from the data
         String[] strings = statement.split(":");
+
+        // Should have 2 strings now (declaration, value)
         if (strings.length != 2) {
             throw new ParseException("Failed to parse declaration.", number);
         }
+
+        // Strip semicolon out
         strings[1] = strings[1].replace(";", "");
+
+        // Parse data
         switch (strings[0]) {
-            case "id":
+            case "clientID":
                 clientID = UUIDUtils.Base64StringToUUID(strings[1].trim());
                 break;
             case "autoconnect":
