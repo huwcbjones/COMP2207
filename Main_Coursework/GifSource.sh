@@ -5,4 +5,4 @@ cd "out/production/Main_Coursework"
 popd
 java -cp "out/production/Main_Coursework" \
 	-Djava.rmi.server.codebase=file:/Users/huw/Documents/University/COMP2207/Main_Coursework/out/production/Main_Coursework/ \
-	Clock $*
+	GifSource $*
