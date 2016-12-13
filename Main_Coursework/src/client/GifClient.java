@@ -214,6 +214,22 @@ public class GifClient extends JFrame {
                 Log.Error(ex.getMessage() + " " + ex.getCause().getMessage());
             }
 
+            if(!sink.isConnectedRMI()){
+                SwingUtilities.invokeLater(() -> {
+                    button_connect.setEnabled(true);
+                    button_disconnect.setEnabled(false);
+                    combo_source.setEnabled(false);
+                    text_source.setEnabled(false);
+                    text_server.setEnabled(true);
+                    text_port.setEnabled(true);
+                    JOptionPane.showMessageDialog(
+                            GifClient.this,
+                            "Failed to connect to RMI Registry.",
+                            "Failed to connect.", JOptionPane.ERROR_MESSAGE);
+                });
+                return;
+            }
+
             // If not, just connect to the registry and let the user type the source they want to connect to
             if (!sink.isConnectedRMIProxy()) {
                 if (!sink.isConnectedRMI()) {
