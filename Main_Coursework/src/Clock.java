@@ -21,7 +21,7 @@ public class Clock extends NotificationSource {
     public Clock() {
         super("Clock");
         try {
-            this.bind();
+            this.bind("localhost");
 
             Log.Info("Clock starting...");
             this.runClock();
@@ -47,7 +47,7 @@ public class Clock extends NotificationSource {
                 Date time;
                 while (true) {
                     time = Calendar.getInstance().getTime();
-                    Log.Info("The time is now: " + time);
+                    Log.Info(String.format("The time is now: %s\r", time), false);
                     sendNotification(new Notification<>("Clock", time));
                     try {
                         Thread.sleep(999);
