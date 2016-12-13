@@ -28,8 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class NotificationSink extends UnicastRemoteObject implements INotificationSink {
 
     public final UUID sinkID;
-    protected Registry registry = null;
-    protected INotificationSource sourceProxy = null;
+    protected Registry registry;
+    protected INotificationSource sourceProxy;
     private HashMap<String, ISinkCallbackHandler> callbackRegistry;
 
     private ConcurrentHashMap<String, INotificationSource> sources;
@@ -40,6 +40,7 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
 
     public NotificationSink(UUID clientID) throws RemoteException {
         super();
+        Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
         this.sinkID = clientID;
         sources = new ConcurrentHashMap<>();
         callbackRegistry = new HashMap<>();
@@ -53,18 +54,36 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
      * @throws ConnectException Thrown if failed to connect
      */
     @SuppressWarnings("unchecked")
-    public void connectRMI(String server, int port) throws ConnectException {
+    public void connectRMIProxy(String server, int port) throws ConnectException {
+        this.sourceProxy = null;
+        this.registry = null;
+        Log.Info("Connecting to registry...");
         registry = RMIUtils.connect(server, port);
+        Log.Info("Connected to registry!");
 
         Log.Info("Registering with SourceProxy...");
 
         try {
-            sourceProxy = (INotificationSource) registry.lookup("SourceProxy");
-            callbackRegistry.put("SourceProxy", (e) -> Log.Info("Received list of sources (" + ((List<Pair<String,INotificationSource>>)e.getData()).size() + ")"));
-            sourceProxy.register(sinkID, this);
+            INotificationSource proxy = (INotificationSource) registry.lookup("SourceProxy");
+            callbackRegistry.put("SourceProxy", (e) -> Log.Info("Received list of sources (" + ((List<Pair<String, INotificationSource>>) e.getData()).size() + ")"));
+            proxy.register(sinkID, this);
+            this.sourceProxy = proxy;
+            Log.Info("Registering with SourceProxy!");
         } catch (RemoteException | NotBoundException | RegisterFailException ex) {
             throw new ConnectException("Failed to register with SourceProxy.", ex);
         }
+    }
+
+    /**
+     * Connect to an RMI server running on server:port.
+     *
+     * @param server Server to connect to
+     * @param port   Port to connect to
+     * @throws ConnectException Thrown if failed to connect to registry
+     */
+    public void connectRMI(String server, int port) throws ConnectException {
+        this.registry = null;
+        this.registry = RMIUtils.connect(server, port);
     }
 
     /**
@@ -85,21 +104,21 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
      * @throws ConnectException
      */
     public void connectSource(String sourceID, ISinkCallbackHandler handler) throws ConnectException {
-        if (registry == null || sourceProxy == null) {
+        if (!isConnectedRMI()) {
             throw new ConnectException("Not connected to remote server.");
         }
 
         try {
             INotificationSource source = (INotificationSource) registry.lookup(sourceID);
             source.register(sinkID, this);
-            Log.Info(String.format("Registered with %s!", sourceID));
+            Log.Info(String.format("Registered with '%s'!", sourceID));
 
             this.sources.put(sourceID, source);
             if (handler != null) this.callbackRegistry.put(sourceID, handler);
         } catch (NotBoundException ex) {
-            throw new ConnectException(String.format("Failed to register with %s - source could not be found.", sourceID), ex);
+            throw new ConnectException(String.format("Failed to register with '%s' - source could not be found.", sourceID), ex);
         } catch (RemoteException | RegisterFailException ex) {
-            throw new ConnectException(String.format("Failed to register with %s.", sourceID), ex);
+            throw new ConnectException(String.format("Failed to register with '%s'.", sourceID), ex);
         }
     }
 
@@ -114,9 +133,9 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
             sources.remove(sourceID);
             callbackRegistry.remove(sourceID);
 
-            Log.Info(String.format("Disconnected from %s.", source));
+            Log.Info(String.format("Disconnected from '%s'.", sourceID));
         } catch (RemoteException e) {
-            Log.Error(String.format("Failed to unregister from %s: %s", sourceID, e.getMessage()));
+            Log.Error(String.format("Failed to unregister from '%s': %s", sourceID, e.getMessage()));
         }
     }
 
@@ -126,7 +145,7 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
         Log.Info("Disconnected from all sources!");
     }
 
-    public void disconnectRMI() {
+    public void disconnectRMIProxy() {
         if (sourceProxy == null) {
             return;
         }
@@ -140,12 +159,21 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
     }
 
     /**
-     * Gets whether or not the sink is connected to an RMI (Proxy) server
+     * Gets whether or not the sink is connected to an RMI server
      *
      * @return True if connected
      */
     public boolean isConnectedRMI() {
-        return !(registry == null || sourceProxy == null);
+        return registry != null;
+    }
+
+    /**
+     * Gets whether or not the sink is connected to an RMI Proxy server
+     *
+     * @return True if connected
+     */
+    public boolean isConnectedRMIProxy() {
+        return sourceProxy != null;
     }
 
     /**
@@ -172,5 +200,22 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
         }
         ISinkCallbackHandler callback = callbackRegistry.get(notification.getSource());
         callback.notify(notification);
+    }
+
+    private class ShutdownHandler extends Thread {
+
+        public ShutdownHandler() {
+            super("ShutdownHandler");
+        }
+
+        @Override
+        public void run() {
+            if (isConnectedSource()) {
+                disconnectAllSource();
+            }
+            if (isConnectedRMIProxy()) {
+                disconnectRMIProxy();
+            }
+        }
     }
 }
