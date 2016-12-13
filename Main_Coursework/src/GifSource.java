@@ -1,3 +1,4 @@
+import server.Config;
 import server.GifStreamer;
 import shared.util.Log;
 
@@ -5,7 +6,7 @@ import java.io.File;
 import java.rmi.RemoteException;
 
 /**
- * {DESCRIPTION}
+ * GIF Stream Source
  *
  * @author Huw Jones
  * @since 13/12/2016
@@ -13,15 +14,28 @@ import java.rmi.RemoteException;
 public class GifSource {
 
     public static void main(String[] args){
-        if(args.length != 1){
-            Log.Fatal("Please provide a path to gif file.");
-            return;
+        Config.loadConfig();
+        File gifFile = null;
+        if(Config.getServerID() == null){
+            Log.Fatal("serverID not set. Please set serverID before starting server.");
+            System.exit(1);
         }
-        File gifFile = new File(args[0]);
+
+        if(Config.getSource() != null) {
+            gifFile = new File(Config.getSource());
+        } else {
+            if(args.length == 0){
+                Log.Fatal("Please provide the path to the source gif.");
+                System.exit(1);
+            } else {
+                gifFile = new File(args[0]);
+            }
+        }
+
         try {
             GifStreamer streamer = new GifStreamer(gifFile);
         } catch (RemoteException e) {
-            Log.Fatal("Failed to start Clock.\n" + e.getMessage());
+            Log.Fatal("Failed to start GifStreamer.\n" + e.getMessage());
             e.printStackTrace();
         }
     }

@@ -13,6 +13,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -29,12 +30,20 @@ public class SourceProxy extends NotificationSource implements INotificationSour
     private HashMap<String, INotificationSource> sourceMap;
 
     public SourceProxy() throws RemoteException {
-        super("sourceproxy");
+        super("SourceProxy");
         sourceMap = new HashMap<>();
         bind();
-        if (registry == null) {
-            System.exit(1);
-        }
+
+        // Try to register all previously registered Sources
+        Arrays.stream(registry.list())
+                .filter(e -> !e.equals("SourceProxy"))
+                .forEach(e -> {
+                    try {
+                        register(e, (INotificationSource) registry.lookup(e));
+                    } catch (RemoteException | NotBoundException ex) {
+                        Log.Warn(String.format("Failed to register '%s': %s", e, ex.getMessage()));
+                    }
+                });
     }
 
     /**
@@ -48,7 +57,7 @@ public class SourceProxy extends NotificationSource implements INotificationSour
     @Override
     public boolean register(UUID sinkID, INotificationSink sink) throws RemoteException, RegisterFailException {
         boolean status = super.register(sinkID, sink);
-        if(isRegistered(sinkID)){
+        if (isRegistered(sinkID)) {
             sink.notify(new Notification<>(sourceID, getSourceList()));
         }
         return status;
@@ -75,11 +84,17 @@ public class SourceProxy extends NotificationSource implements INotificationSour
         updateSinks();
     }
 
-    private ArrayList<Pair<String, INotificationSource>> getSourceList(){
+    /**
+     * Get a list of the registered sources
+     *
+     * @return List of registered sources
+     */
+    private ArrayList<Pair<String, INotificationSource>> getSourceList() {
         return new ArrayList<>(sourceMap.entrySet().stream()
                 .map(e -> new Pair<>(e.getKey(), e.getValue()))
                 .collect(Collectors.toList()));
     }
+
     /**
      * Updates the sinks with the list of sources
      */

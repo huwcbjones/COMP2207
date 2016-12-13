@@ -32,6 +32,10 @@ public class Notification<T extends Serializable> implements Serializable {
         this.time = new Timestamp(Calendar.getInstance().getTime().getTime());
     }
 
+    /**
+     * Get the SourceID of the notification
+     * @return SourceID
+     */
     public String getSource() {
         return source;
     }
@@ -41,14 +45,26 @@ public class Notification<T extends Serializable> implements Serializable {
         return String.format("notification: {\n  date: %s,\n  priority: %s,\n  data: %s\n}", this.getTime(), this.getPriority(), this.getData());
     }
 
+    /**
+     * Get the time the notification was sent
+     * @return Time notification was sent
+     */
     public Timestamp getTime() {
         return time;
     }
 
+    /**
+     * Get the priority of the notification
+     * @return Notification priority
+     */
     public PRIORITY getPriority() {
         return priority;
     }
 
+    /**
+     * Get the notification data
+     * @return Data
+     */
     public T getData() {
         return data;
     }

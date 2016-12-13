@@ -1,7 +1,5 @@
 package shared.interfaces;
 
-import shared.exceptions.RegisterFailException;
-
 import java.rmi.RemoteException;
 
 /**
@@ -18,9 +16,8 @@ public interface INotificationSourceProxy extends INotificationSource {
      * @param sourceID ID to register as
      * @param source   Source to register
      * @throws RemoteException
-     * @throws RegisterFailException
      */
-    public void register(String sourceID, INotificationSource source) throws RemoteException;
+    void register(String sourceID, INotificationSource source) throws RemoteException;
 
     /**
      * Unregisters a source on this RMI Registry for sinks to access
@@ -28,5 +25,5 @@ public interface INotificationSourceProxy extends INotificationSource {
      * @param sourceID ID to register as
      * @throws RemoteException
      */
-    public void unregister(String sourceID) throws RemoteException;
+    void unregister(String sourceID) throws RemoteException;
 }

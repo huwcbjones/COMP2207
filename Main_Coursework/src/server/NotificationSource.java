@@ -53,6 +53,10 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
      */
     private HashMap<UUID, ConcurrentLinkedQueue<Notification>> notificationQueue;
 
+    public NotificationSource() throws RemoteException {
+        this(Config.getServerID());
+    }
+
     public NotificationSource(String sourceID) throws RemoteException {
         super();
         Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
@@ -61,15 +65,35 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
         this.notificationQueue = new HashMap<>();
     }
 
+    /**
+     * Binds this source to the RMI Registry server using the Proxy Source,
+     * then falls back to RMI binding if the server is the localhost.
+     * Otherwise fails to bind.
+     *
+     * @throws ConnectException Thrown if failed to connect to the registry server
+     */
     public void bind() throws ConnectException {
-        bind("localhost", 1099);
+        String server = (Config.getRmiServer() == null) ? "localhost" : Config.getRmiServer();
+        int port = (Config.getRmiPort() == null) ? 1099 : Config.getRmiPort();
+        bind(server, port);
     }
 
+    /**
+     * Binds this source to the RMI Registry server using the Proxy Source,
+     * then falls back to RMI binding if the server is the localhost.
+     * Otherwise fails to bind.
+     *
+     * @param registryServer Server hostname
+     * @param registryPort   Server port
+     * @throws ConnectException Thrown if failed to connect to the registry server
+     */
     public void bind(String registryServer, int registryPort) throws ConnectException {
         this.proxy = null;
 
+        // Connect to the registry
         registry = RMIUtils.connect(registryServer, registryPort);
 
+        // We are now connected to the registry server
         this.registryServer = registryServer;
         this.registryPort = registryPort;
 
@@ -92,6 +116,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
 
             Log.Warn(String.format("Failed to register %s (using SourceProxy)... attempting straight bind", sourceID));
             try {
+                // Bind using the localhost registry
                 registry.rebind(sourceID, this);
                 Log.Info("Registered " + this.sourceID + "!");
             } catch (RemoteException e) {
@@ -100,10 +125,26 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
         }
     }
 
+    /**
+     * Binds this source to the RMI Registry server using the Proxy Source,
+     * then falls back to RMI binding if the server is the localhost.
+     * Otherwise fails to bind.
+     *
+     * @param registryServer Server hostname
+     * @throws ConnectException Thrown if failed to connect to the registry server
+     */
     public void bind(String registryServer) throws ConnectException {
         bind(registryServer, 1099);
     }
 
+    /**
+     * Binds this source to the RMI Registry server using the Proxy Source,
+     * then falls back to RMI binding if the server is the localhost.
+     * Otherwise fails to bind.
+     *
+     * @param registryPort   Server port
+     * @throws ConnectException Thrown if failed to connect to the registry server
+     */
     public void bind(int registryPort) throws ConnectException {
         bind("localhost", registryPort);
     }
@@ -135,8 +176,13 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
     public boolean register(UUID sinkID, INotificationSink sink) throws RemoteException, RegisterFailException {
         if (!isRegistered(sinkID)) {
             try {
-                if (sinkID == null) sinkID = UUID.randomUUID();
+                // If the sink doesn't have a UUID, create one
+                if (sinkID == null) sinkID = getUUID();
+
+                // Store the sink
                 this.registeredSinks.put(sinkID, sink);
+
+                // Create the queue for storing messages that fail to send
                 this.notificationQueue.put(sinkID, new ConcurrentLinkedQueue<>());
                 Log.Info("Sink registered: " + UUIDUtils.UUIDToBase64String(sinkID));
                 return true;
@@ -174,6 +220,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
     @Override
     public boolean unRegister(INotificationSink sink) throws RemoteException {
         if (isRegistered(sink)) {
+            // Get the sink UUID
             UUID sinkID = this.registeredSinks
                     .entrySet()
                     .stream()
@@ -236,9 +283,17 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
         return _isRegistered(sinkID);
     }
 
+    /**
+     * Sends the queue of missed notifications to the sink
+     * @param sinkID
+     */
     private void sendQueue(UUID sinkID) {
+        // Get the sink, and the sink's queue
         INotificationSink sink = this.registeredSinks.get(sinkID);
         ConcurrentLinkedQueue<Notification> queue = this.notificationQueue.get(sinkID);
+
+        // Send all the notifications in the queue
+        // We are peeking to get the notification, then after we know it's been sent, removing it
         Notification notification;
         while ((notification = queue.peek()) != null) {
             try {
@@ -264,6 +319,11 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
             try {
                 Log.Trace("Sending message to: " + UUIDUtils.UUIDToBase64String(id));
                 sink.notify(notification);
+
+                // If we successfully sent a notification, check if the queue is empty, if not, empty it (as we can now send notifications)
+                if(notificationQueue.get(id).size() != 0){
+                    sendQueue(id);
+                }
             } catch (RemoteException e) {
                 Log.Warn(String.format("Failed to send message to: %s. Queuing for delivery later. ", UUIDUtils.UUIDToBase64String(id)));
                 this.queueNotification(id, notification);

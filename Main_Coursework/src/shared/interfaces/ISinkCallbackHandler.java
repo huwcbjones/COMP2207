@@ -10,5 +10,9 @@ import shared.Notification;
  */
 public interface ISinkCallbackHandler {
 
+    /**
+     * Sink Notification callback method
+     * @param notification Notification received
+     */
     void notify(Notification notification);
 }
