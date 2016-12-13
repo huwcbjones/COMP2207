@@ -5,7 +5,6 @@ import shared.components.HintTextFieldUI;
 import shared.exceptions.ConnectException;
 import shared.interfaces.INotificationSource;
 import shared.notifications.Notification;
-import shared.notifications.NotificationSink;
 import shared.util.ImageUtils;
 import shared.util.Log;
 
@@ -17,7 +16,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -48,7 +46,7 @@ public class GifClient extends JFrame {
     public GifClient() {
         super("RMI Client");
         try {
-            GifClient.sink = new Sink(Config.getClientID());
+            GifClient.sink = new Sink();
         } catch (RemoteException ex) {
             Log.Fatal("Failed to load client: " + ex.getMessage());
             ex.printStackTrace();
@@ -62,6 +60,17 @@ public class GifClient extends JFrame {
         this.setMinimumSize(new Dimension(600, 400));
         this.setLocationRelativeTo(null);
         this.setResizable(true);
+
+        if(Config.getRmiServer() != null){
+            text_server.setText(Config.getRmiServer());
+        }
+        if(Config.getRmiPort() != null){
+            text_port.setText(Config.getRmiPort().toString());
+        }
+
+        if(Config.isAutoconnect()){
+            rmiConnectListener.actionPerformed(null);
+        }
 
         this.setVisible(true);
     }
@@ -191,6 +200,43 @@ public class GifClient extends JFrame {
         });
     }
 
+    private void sourceConnect(){
+        sourceConnect(null);
+    }
+
+    private void sourceConnect(String source){
+        try {
+            if(source == null) {
+                if (combo_source.isVisible()) {
+                    source = (String) combo_source.getSelectedItem();
+                } else if (text_source.isVisible()) {
+                    source = text_source.getText();
+                }
+            }
+            if (source == null || source.length() == 0) {
+                JOptionPane.showMessageDialog(GifClient.this,
+                        "Please enter/select the ID of the source you'd like to connect to.",
+                        "Failed to connect",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if(gifWindows.containsKey(source)){
+                GifWindow window = gifWindows.get(source);
+                window.setVisible(true);
+                window.toFront();
+                window.repaint();
+            } else {
+                SourceConnectThread t = new SourceConnectThread(source);
+                t.start();
+            }
+        } catch (Exception ex) {
+            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
+                    GifClient.this,
+                    ex.getMessage(),
+                    "Failed to connect", JOptionPane.ERROR_MESSAGE));
+        }
+    }
+
     private class ConnectThread extends Thread {
         private String rmiServer;
         private int port;
@@ -275,6 +321,10 @@ public class GifClient extends JFrame {
                 text_server.setEnabled(false);
                 text_port.setEnabled(false);
             });
+
+            for(String source: Config.getSources()){
+                sourceConnect(source);
+            }
         }
     }
 
@@ -330,8 +380,8 @@ public class GifClient extends JFrame {
     @SuppressWarnings("unchecked")
     private class Sink extends NotificationSink {
 
-        public Sink(UUID clientID) throws RemoteException {
-            super(clientID);
+        public Sink() throws RemoteException {
+            super();
         }
 
         /**
@@ -398,35 +448,7 @@ public class GifClient extends JFrame {
          */
         @Override
         public void actionPerformed(ActionEvent e) {
-            try {
-                String sourceID = "";
-                if (combo_source.isVisible()) {
-                    sourceID = (String) combo_source.getSelectedItem();
-                } else if (text_source.isVisible()) {
-                    sourceID = text_source.getText();
-                }
-                if (sourceID.length() == 0) {
-                    JOptionPane.showMessageDialog(GifClient.this,
-                            "Please enter/select the ID of the source you'd like to connect to.",
-                            "Failed to connect",
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                if(gifWindows.containsKey(sourceID)){
-                    GifWindow window = gifWindows.get(sourceID);
-                    window.setVisible(true);
-                    window.toFront();
-                    window.repaint();
-                } else {
-                    SourceConnectThread t = new SourceConnectThread(sourceID);
-                    t.start();
-                }
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
-                        GifClient.this,
-                        ex.getMessage(),
-                        "Failed to connect", JOptionPane.ERROR_MESSAGE));
-            }
+            sourceConnect();
         }
     }
 }

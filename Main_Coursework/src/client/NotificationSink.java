@@ -1,4 +1,4 @@
-package shared.notifications;
+package client;
 
 import javafx.util.Pair;
 import shared.exceptions.ConnectException;
@@ -6,6 +6,7 @@ import shared.exceptions.RegisterFailException;
 import shared.interfaces.INotificationSink;
 import shared.interfaces.INotificationSource;
 import shared.interfaces.ISinkCallbackHandler;
+import shared.notifications.Notification;
 import shared.util.Log;
 import shared.util.RMIUtils;
 
@@ -27,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class NotificationSink extends UnicastRemoteObject implements INotificationSink {
 
-    public final UUID sinkID;
     protected Registry registry;
     protected INotificationSource sourceProxy;
     private HashMap<String, ISinkCallbackHandler> callbackRegistry;
@@ -35,13 +35,8 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
     private ConcurrentHashMap<String, INotificationSource> sources;
 
     public NotificationSink() throws RemoteException {
-        this(UUID.randomUUID());
-    }
-
-    public NotificationSink(UUID clientID) throws RemoteException {
         super();
         Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
-        this.sinkID = clientID;
         sources = new ConcurrentHashMap<>();
         callbackRegistry = new HashMap<>();
     }
@@ -66,7 +61,12 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
         try {
             INotificationSource proxy = (INotificationSource) registry.lookup("SourceProxy");
             callbackRegistry.put("SourceProxy", (e) -> Log.Info("Received list of sources (" + ((List<Pair<String, INotificationSource>>) e.getData()).size() + ")"));
-            proxy.register(sinkID, this);
+            if(Config.getClientID() == null) {
+                UUID sinkID = proxy.register(this);
+                Config.setClientID(sinkID);
+            } else {
+                proxy.register(Config.getClientID(), this);
+            }
             this.sourceProxy = proxy;
             Log.Info("Registering with SourceProxy!");
         } catch (RemoteException | NotBoundException | RegisterFailException ex) {
@@ -110,7 +110,12 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
 
         try {
             INotificationSource source = (INotificationSource) registry.lookup(sourceID);
-            source.register(sinkID, this);
+            if(Config.getClientID() == null) {
+                UUID sinkID = source.register(this);
+                Config.setClientID(sinkID);
+            } else {
+                source.register(Config.getClientID(), this);
+            }
             Log.Info(String.format("Registered with '%s'!", sourceID));
 
             this.sources.put(sourceID, source);
@@ -129,7 +134,7 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
         }
         INotificationSource source = this.sources.get(sourceID);
         try {
-            source.unRegister(this.sinkID);
+            source.unRegister(Config.getClientID());
             sources.remove(sourceID);
             callbackRegistry.remove(sourceID);
 
@@ -151,7 +156,7 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
         }
         try {
             Log.Info("Disconnecting from RMI registry (Source Proxy)...");
-            sourceProxy.unRegister(this.sinkID);
+            sourceProxy.unRegister(Config.getClientID());
             Log.Info("Disconnected from RMI registry (Source Proxy)!");
         } catch (RemoteException e) {
             Log.Error("Failed to unregister from SourceProxy: " + e.getMessage());

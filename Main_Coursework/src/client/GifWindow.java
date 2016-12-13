@@ -1,7 +1,5 @@
 package client;
 
-import shared.notifications.NotificationSink;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
