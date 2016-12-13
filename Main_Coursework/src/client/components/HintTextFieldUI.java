@@ -1,4 +1,4 @@
-package shared.components;
+package client.components;
 
 import javax.swing.plaf.basic.BasicTextFieldUI;
 import javax.swing.text.JTextComponent;

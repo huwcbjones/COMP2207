@@ -1,6 +1,6 @@
 package shared.interfaces;
 
-import shared.notifications.Notification;
+import shared.Notification;
 
 /**
  * Sink Callback Interface

@@ -1,10 +1,11 @@
 package client;
 
+import client.components.GifWindow;
+import client.components.HintTextFieldUI;
 import javafx.util.Pair;
-import shared.components.HintTextFieldUI;
+import shared.Notification;
 import shared.exceptions.ConnectException;
 import shared.interfaces.INotificationSource;
-import shared.notifications.Notification;
 import shared.util.ImageUtils;
 import shared.util.Log;
 
@@ -393,7 +394,7 @@ public class GifClient extends JFrame {
         @Override
         public void notify(Notification notification) throws RemoteException {
             super.notify(notification);
-            if (notification.getSource().equals("SourceProxy")) {
+            if (notification.getSource().equals("sourceproxy")) {
                 ArrayList<Pair<String, INotificationSource>> data = (ArrayList<Pair<String, INotificationSource>>) notification.getData();
                 SwingUtilities.invokeLater(() -> {
                     combo_source.removeAllItems();

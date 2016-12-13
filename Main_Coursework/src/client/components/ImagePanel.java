@@ -1,4 +1,4 @@
-package client;
+package client.components;
 
 import shared.util.ImageUtils;
 
@@ -158,10 +158,6 @@ public class ImagePanel extends JPanel implements SwingConstants {
         }
     }
 
-    public void setImage(BufferedImage image) {
-        this.setImage(image, false);
-    }
-
     public void setImage(BufferedImage image, boolean repaint) {
         this.image = image;
         if(image == null) return;
@@ -171,6 +167,10 @@ public class ImagePanel extends JPanel implements SwingConstants {
 
     public BufferedImage getImage() {
         return image;
+    }
+
+    public void setImage(BufferedImage image) {
+        this.setImage(image, false);
     }
 
     @Override

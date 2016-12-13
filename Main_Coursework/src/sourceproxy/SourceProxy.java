@@ -1,6 +1,8 @@
-package shared.notifications;
+package sourceproxy;
 
 import javafx.util.Pair;
+import server.NotificationSource;
+import shared.Notification;
 import shared.exceptions.RegisterFailException;
 import shared.interfaces.INotificationSink;
 import shared.interfaces.INotificationSource;
@@ -9,11 +11,8 @@ import shared.util.Log;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,12 +24,12 @@ import java.util.stream.Collectors;
  * @author Huw Jones
  * @since 12/12/2016
  */
-public class SourceProxySource extends NotificationSource implements INotificationSourceProxy {
+public class SourceProxy extends NotificationSource implements INotificationSourceProxy {
 
     private HashMap<String, INotificationSource> sourceMap;
 
-    public SourceProxySource() throws RemoteException {
-        super("SourceProxy");
+    public SourceProxy() throws RemoteException {
+        super("sourceproxy");
         sourceMap = new HashMap<>();
         bind();
         if (registry == null) {

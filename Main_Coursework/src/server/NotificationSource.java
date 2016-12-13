@@ -1,5 +1,6 @@
-package shared.notifications;
+package server;
 
+import shared.Notification;
 import shared.exceptions.ConnectException;
 import shared.exceptions.RegisterFailException;
 import shared.interfaces.INotificationSink;
@@ -76,7 +77,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
 
         try {
             // Try to register using the proxy
-            INotificationSourceProxy proxy = (INotificationSourceProxy) registry.lookup("SourceProxy");
+            INotificationSourceProxy proxy = (INotificationSourceProxy) registry.lookup("sourceproxy");
             proxy.register(sourceID, this);
             this.proxy = proxy;
             Log.Info("Registered " + this.sourceID + "!");

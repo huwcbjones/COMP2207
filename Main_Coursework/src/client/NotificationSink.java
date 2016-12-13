@@ -1,12 +1,12 @@
 package client;
 
 import javafx.util.Pair;
+import shared.Notification;
 import shared.exceptions.ConnectException;
 import shared.exceptions.RegisterFailException;
 import shared.interfaces.INotificationSink;
 import shared.interfaces.INotificationSource;
 import shared.interfaces.ISinkCallbackHandler;
-import shared.notifications.Notification;
 import shared.util.Log;
 import shared.util.RMIUtils;
 
@@ -59,8 +59,8 @@ public abstract class NotificationSink extends UnicastRemoteObject implements IN
         Log.Info("Registering with SourceProxy...");
 
         try {
-            INotificationSource proxy = (INotificationSource) registry.lookup("SourceProxy");
-            callbackRegistry.put("SourceProxy", (e) -> Log.Info("Received list of sources (" + ((List<Pair<String, INotificationSource>>) e.getData()).size() + ")"));
+            INotificationSource proxy = (INotificationSource) registry.lookup("sourceproxy");
+            callbackRegistry.put("sourceproxy", (e) -> Log.Info("Received list of sources (" + ((List<Pair<String, INotificationSource>>) e.getData()).size() + ")"));
             if(Config.getClientID() == null) {
                 UUID sinkID = proxy.register(this);
                 Config.setClientID(sinkID);

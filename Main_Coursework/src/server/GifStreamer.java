@@ -1,12 +1,10 @@
 package server;
 
-import com.sun.imageio.plugins.gif.GIFImageReader;
+import client.util.PatchedGIFImageReader;
 import com.sun.imageio.plugins.gif.GIFImageReaderSpi;
-import shared.notifications.Notification;
-import shared.notifications.NotificationSource;
+import shared.Notification;
 import shared.util.ImageUtils;
 import shared.util.Log;
-import shared.util.PatchedGIFImageReader;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;

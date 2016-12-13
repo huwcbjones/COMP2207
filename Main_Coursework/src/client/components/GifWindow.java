@@ -1,4 +1,7 @@
-package client;
+package client.components;
+
+import client.GifClient;
+import client.NotificationSink;
 
 import javax.swing.*;
 import java.awt.*;
