@@ -2,6 +2,7 @@ package client;
 
 import javafx.util.Pair;
 import shared.components.HintTextFieldUI;
+import shared.exceptions.ConnectException;
 import shared.interfaces.INotificationSource;
 import shared.notifications.Notification;
 import shared.notifications.NotificationSink;
@@ -16,7 +17,11 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Function;
 
 /**
  * Client GUI Class
@@ -31,11 +36,14 @@ public class Client extends JFrame {
     JButton button_disconnect;
     JButton button_connect;
     JLabel label_source;
+    JTextField text_source;
     JComboBox<String> combo_source;
     JLabel label_server;
     JTextField text_server;
     JLabel label_port;
     JTextField text_port;
+
+    ConcurrentHashMap<String, GifWindow> gifWindows = new ConcurrentHashMap<>();
 
     ActionListener rmiConnectListener = new RMIConnect();
     ActionListener sourceConnectListener = new SourceConnect();
@@ -49,8 +57,6 @@ public class Client extends JFrame {
             ex.printStackTrace();
             System.exit(1);
         }
-
-        Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
 
         this.initUI();
         this.initEventListeners();
@@ -90,6 +96,14 @@ public class Client extends JFrame {
         c.insets = new Insets(3, 0, 3, 0);
         c.gridy = row;
         this.panel_gui.add(this.label_source, c);
+        row++;
+
+        this.text_source = new JTextField();
+        this.text_source.setEnabled(false);
+        this.text_source.setVisible(false);
+        c.gridy = row;
+        c.insets = new Insets(0, 0, 6, 0);
+        this.panel_gui.add(this.text_source, c);
         row++;
 
         this.combo_source = new JComboBox<>();
@@ -159,13 +173,15 @@ public class Client extends JFrame {
     private void initEventListeners() {
         this.button_connect.addActionListener(rmiConnectListener);
         this.button_disconnect.addActionListener(e -> {
+            gifWindows.entrySet().forEach(w -> {w.getValue().dispose(); gifWindows.remove(w.getKey());});
             if (sink.isConnectedSource()) {
                 sink.disconnectAllSource();
             }
-            if (sink.isConnectedRMI()) {
-                sink.disconnectRMI();
+            if (sink.isConnectedRMIProxy()) {
+                sink.disconnectRMIProxy();
             }
             button_disconnect.setEnabled(false);
+            text_source.setEnabled(false);
             combo_source.setEnabled(false);
             combo_source.removeAllItems();
             text_server.setEnabled(true);
@@ -178,36 +194,122 @@ public class Client extends JFrame {
         });
     }
 
-    private void connect_disconnect(boolean state) {
-        button_disconnect.setEnabled(true);
-        combo_source.setEnabled(true);
-        text_server.setEnabled(false);
-        text_port.setEnabled(false);
-
-        button_connect.removeActionListener(rmiConnectListener);
-        button_connect.addActionListener(sourceConnectListener);
-    }
-
-    private class connectThread extends Thread {
+    private class ConnectThread extends Thread {
         private String rmiServer;
         private int port;
 
-        public connectThread(String rmiServer, int port) {
-            super("ConnectionThread");
+        public ConnectThread(String rmiServer, int port) {
+            super("ConnectThread");
             this.rmiServer = rmiServer;
             this.port = port;
         }
 
         @Override
         public void run() {
+            // Try to connect to SourceProxy
             try {
-                sink.connectRMI(rmiServer, port);
-                SwingUtilities.invokeLater(() -> Client.this.setTitle(String.format("RMI Client - %s:%s", rmiServer, port)));
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
-                        Client.this,
-                        ex.getMessage(),
-                        "Failed to connect.", JOptionPane.ERROR_MESSAGE));
+                sink.connectRMIProxy(rmiServer, port);
+                SwingUtilities.invokeLater(() -> {
+                    combo_source.setVisible(true);
+                    text_source.setVisible(false);
+                });
+            } catch (ConnectException ex) {
+                Log.Error(ex.getMessage() + " " + ex.getCause().getMessage());
+            }
+
+            // If not, just connect to the registry and let the user type the source they want to connect to
+            if (!sink.isConnectedRMIProxy()) {
+                if (!sink.isConnectedRMI()) {
+                    Log.Info("Connecting to RMI registry...");
+                    try {
+                        sink.connectRMI(rmiServer, port);
+                    } catch (ConnectException ex) {
+                        SwingUtilities.invokeLater(() -> {
+                            button_connect.setEnabled(true);
+                            button_disconnect.setEnabled(false);
+                            combo_source.setEnabled(false);
+                            text_server.setEnabled(true);
+                            text_port.setEnabled(true);
+                            button_connect.addActionListener(rmiConnectListener);
+                            button_connect.removeActionListener(sourceConnectListener);
+                            JOptionPane.showMessageDialog(
+                                    Client.this,
+                                    ex.getMessage(),
+                                    "Failed to connect.", JOptionPane.ERROR_MESSAGE);
+                        });
+                    }
+                } else {
+                    SwingUtilities.invokeLater(() -> {
+                        combo_source.setVisible(false);
+                        text_source.setVisible(true);
+                    });
+                }
+            }
+
+            Log.Info("Connected to  RMI registry!");
+
+            // Can't use SourceProxy to get a list of sources, so enable manual bind
+            SwingUtilities.invokeLater(() -> {
+
+                Client.this.setTitle(String.format("RMI Client - %s:%s", rmiServer, port));
+                button_connect.removeActionListener(rmiConnectListener);
+                button_connect.addActionListener(sourceConnectListener);
+
+                button_connect.setEnabled(true);
+                button_disconnect.setEnabled(true);
+                combo_source.setEnabled(true);
+                text_source.setEnabled(true);
+                text_server.setEnabled(false);
+                text_port.setEnabled(false);
+            });
+        }
+    }
+
+    private class SourceConnectThread extends Thread {
+
+        private String sourceID;
+
+        public SourceConnectThread(String sourceID) {
+            super("SourceThread");
+            this.sourceID = sourceID;
+        }
+
+        @Override
+        public void run() {
+            GifWindow window = new GifWindow(sourceID);
+            SwingUtilities.invokeLater(() -> {
+                button_connect.setEnabled(false);
+                text_source.setEnabled(false);
+                combo_source.setEnabled(false);
+            });
+
+            try {
+
+
+                sink.connectSource(sourceID, n -> SwingUtilities.invokeLater(() -> {
+                    try {
+                        window.displayImage(ImageUtils.bytesToImage((byte[]) n.getData()));
+                    } catch (IOException e1) {
+                        Log.Error("Failed to convert bytes to image: " + e1.getMessage());
+                        e1.printStackTrace();
+                    }
+                }));
+                gifWindows.put(sourceID, window);
+                SwingUtilities.invokeLater(() -> window.setVisible(true));
+            } catch (ConnectException ex) {
+                SwingUtilities.invokeLater(() -> {
+                    window.dispose();
+                    JOptionPane.showMessageDialog(
+                            Client.this,
+                            ex.getMessage(),
+                            "Failed to connect", JOptionPane.ERROR_MESSAGE);
+                });
+            } finally {
+                SwingUtilities.invokeLater(() -> {
+                    button_connect.setEnabled(true);
+                    text_source.setEnabled(true);
+                    combo_source.setEnabled(true);
+                });
             }
         }
     }
@@ -252,20 +354,25 @@ public class Client extends JFrame {
                 String intStr = text_port.getText().trim();
                 intStr = (intStr.length() == 0 ? "1099" : intStr);
 
-                Thread t = new connectThread(server, Integer.parseInt(intStr));
+                Thread t = new ConnectThread(server, Integer.parseInt(intStr));
                 t.start();
-                button_disconnect.setEnabled(true);
-                combo_source.setEnabled(true);
+                button_connect.setEnabled(false);
+                button_disconnect.setEnabled(false);
+                combo_source.setEnabled(false);
                 text_server.setEnabled(false);
                 text_port.setEnabled(false);
-
-                button_connect.removeActionListener(rmiConnectListener);
-                button_connect.addActionListener(sourceConnectListener);
             } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
-                        Client.this,
-                        "Failed to connect to source.\n" + ex.getMessage(),
-                        "Failed to connect.", JOptionPane.ERROR_MESSAGE));
+                SwingUtilities.invokeLater(() -> {
+                    button_connect.setEnabled(true);
+                    button_disconnect.setEnabled(false);
+                    combo_source.setEnabled(false);
+                    text_server.setEnabled(true);
+                    text_port.setEnabled(true);
+                    JOptionPane.showMessageDialog(
+                            Client.this,
+                            "Failed to connect to source.\n" + ex.getMessage(),
+                            "Failed to connect.", JOptionPane.ERROR_MESSAGE);
+                });
             }
         }
     }
@@ -279,43 +386,33 @@ public class Client extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             try {
-                String sourceID = (String) combo_source.getSelectedItem();
-                GifWindow window = new GifWindow(sourceID);
-                sink.connectSource(sourceID, n -> SwingUtilities.invokeLater(() -> {
-                    try {
-
-                        window.displayImage(ImageUtils.bytesToImage((byte[]) n.getData()));
-                    } catch (IOException e1) {
-                        Log.Error("Failed to convert bytes to image: " + e1.getMessage());
-                        e1.printStackTrace();
-                    }
-                }));
-                window.setVisible(true);
+                String sourceID = "";
+                if (combo_source.isVisible()) {
+                    sourceID = (String) combo_source.getSelectedItem();
+                } else if (text_source.isVisible()) {
+                    sourceID = text_source.getText();
+                }
+                if (sourceID.length() == 0) {
+                    JOptionPane.showMessageDialog(Client.this,
+                            "Please enter/select the ID of the source you'd like to connect to.",
+                            "Failed to connect",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if(gifWindows.containsKey(sourceID)){
+                    GifWindow window = gifWindows.get(sourceID);
+                    window.setVisible(true);
+                    window.toFront();
+                    window.repaint();
+                } else {
+                    SourceConnectThread t = new SourceConnectThread(sourceID);
+                    t.start();
+                }
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
                         Client.this,
                         ex.getMessage(),
-                        "Failed to connect.", JOptionPane.ERROR_MESSAGE));
-            }
-        }
-    }
-
-    private class ShutdownHandler extends Thread {
-
-        public ShutdownHandler() {
-            super("ShutdownHandler");
-        }
-
-        @Override
-        public void run() {
-            if (sink == null) {
-                return;
-            }
-            if (sink.isConnectedSource()) {
-                sink.disconnectAllSource();
-            }
-            if (sink.isConnectedRMI()) {
-                sink.disconnectRMI();
+                        "Failed to connect", JOptionPane.ERROR_MESSAGE));
             }
         }
     }

@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.io.Closeable;
 
 /**
  * {DESCRIPTION}
@@ -14,7 +15,7 @@ import java.awt.image.BufferedImage;
  * @author Huw Jones
  * @since 13/12/2016
  */
-public class GifWindow extends JFrame {
+public class GifWindow extends JFrame implements AutoCloseable {
 
     ImagePanel imagePanel;
     String sourceID;
@@ -32,6 +33,11 @@ public class GifWindow extends JFrame {
 
     public void displayImage(BufferedImage image){
         imagePanel.setImage(image, true);
+    }
+
+    @Override
+    public void close() {
+        this.dispose();
     }
 
     private class WindowHandler extends WindowAdapter {
