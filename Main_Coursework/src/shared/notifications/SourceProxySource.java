@@ -27,22 +27,10 @@ public class SourceProxySource extends NotificationSource implements INotificati
 
     private HashMap<String, INotificationSource> sourceMap;
 
-    public SourceProxySource() {
+    public SourceProxySource() throws RemoteException {
         super("SourceProxy");
         sourceMap = new HashMap<>();
         bind();
-        /*try {
-            INotificationSourceProxy sourceStub = (INotificationSourceProxy) UnicastRemoteObject.exportObject(this, 0);
-
-            Log.Info("Locating registry...");
-            registry = LocateRegistry.getRegistry();
-
-            Log.Info("Binding source proxy stub...");
-            registry.rebind(sourceID, sourceStub);
-
-        } catch (Exception ex) {
-            Log.Fatal(ex.getMessage());
-        }*/
         if (registry == null) {
             System.exit(1);
         }
@@ -82,6 +70,7 @@ public class SourceProxySource extends NotificationSource implements INotificati
 
         // Bind the source, then tell all sinks there is a new source
         registry.rebind(sourceID, sourceStub);
+        Log.Info(String.format("Registered Source: %s", sourceID));
         updateSinks();
     }
 

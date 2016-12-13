@@ -6,11 +6,11 @@ import shared.interfaces.INotificationSink;
 import shared.interfaces.INotificationSource;
 import shared.interfaces.INotificationSourceProxy;
 import shared.util.Log;
+import shared.util.RMIUtils;
 import shared.util.UUIDUtils;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
@@ -25,16 +25,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Huw Jones
  * @since 02/12/2016
  */
-public abstract class NotificationSource implements INotificationSource {
-    /**
-     * RMI Registry Server
-     */
-    protected Registry registry;
-
+public abstract class NotificationSource extends UnicastRemoteObject implements INotificationSource {
     /**
      * ID of the source (used to bind to the registry server)
      */
     protected final String sourceID;
+    /**
+     * RMI Registry Server
+     */
+    protected Registry registry;
     /**
      * Map of sinks (UUID=>sink) that are registered to this source
      */
@@ -45,7 +44,8 @@ public abstract class NotificationSource implements INotificationSource {
      */
     private HashMap<UUID, ConcurrentLinkedQueue<Notification>> notificationQueue;
 
-    public NotificationSource(String sourceID) {
+    public NotificationSource(String sourceID) throws RemoteException {
+        super();
         this.sourceID = sourceID;
         this.registeredSinks = new HashMap<>();
         this.notificationQueue = new HashMap<>();
@@ -56,27 +56,14 @@ public abstract class NotificationSource implements INotificationSource {
     }
 
     public void bind(String registryServer, int registryPort) throws ConnectException {
-        try {
-            Log.Info("Locating registry...");
-            registry = LocateRegistry.getRegistry(registryServer, registryPort);
-            registry.list();
-            Log.Info("Registry found!");
-        } catch (RemoteException e) {
-            throw new ConnectException(String.format("Failed to connect to RMI registry @%s:%d", registryServer, registryPort), e);
-        }
+        registry = RMIUtils.connect(registryServer, registryPort);
 
-        INotificationSource sourceStub;
-        try {
-            Log.Info("Registering " + this.sourceID + "...");
-            sourceStub = (INotificationSource) UnicastRemoteObject.exportObject(this, 0);
-        } catch (RemoteException ex) {
-            throw new ConnectException(String.format("Failed to register %s.", sourceID), ex);
-        }
+        Log.Info("Registering " + this.sourceID + "...");
 
         try {
             // Try to register using the proxy
             INotificationSourceProxy proxy = (INotificationSourceProxy) registry.lookup("SourceProxy");
-            proxy.register(sourceID, sourceStub);
+            proxy.register(sourceID, this);
             Log.Info("Registered " + this.sourceID + "!");
 
         } catch (RemoteException | NotBoundException ex) {
@@ -89,7 +76,7 @@ public abstract class NotificationSource implements INotificationSource {
 
             Log.Info(String.format("Failed to register %s (using SourceProxy)... attempting straight bind", sourceID));
             try {
-                registry.rebind(sourceID, sourceStub);
+                registry.rebind(sourceID, this);
                 Log.Info("Registered " + this.sourceID + "!");
             } catch (RemoteException e) {
                 throw new ConnectException("Failed to register source.", e);
@@ -135,7 +122,7 @@ public abstract class NotificationSource implements INotificationSource {
                 if (sinkID == null) sinkID = UUID.randomUUID();
                 this.registeredSinks.put(sinkID, sink);
                 this.notificationQueue.put(sinkID, new ConcurrentLinkedQueue<>());
-                Log.Info("Registered sink: " + UUIDUtils.UUIDToBase64String(sinkID));
+                Log.Info("Sink registered: " + UUIDUtils.UUIDToBase64String(sinkID));
                 return true;
             } catch (Exception e) {
                 Log.Error(e.toString());
@@ -194,6 +181,7 @@ public abstract class NotificationSource implements INotificationSource {
         if (isRegistered(sinkID)) {
             this.registeredSinks.remove(sinkID);
             this.notificationQueue.remove(sinkID);
+            Log.Info("Sink unregistered: " + UUIDUtils.UUIDToBase64String(sinkID));
         }
         return isRegistered(sinkID);
     }

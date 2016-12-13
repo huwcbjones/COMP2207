@@ -1,4 +1,7 @@
 import shared.notifications.SourceProxySource;
+import shared.util.Log;
+
+import java.rmi.RemoteException;
 
 /**
  * {DESCRIPTION}
@@ -9,6 +12,11 @@ import shared.notifications.SourceProxySource;
 public class SourceProxy {
 
     public static void main(String[] args){
-        SourceProxySource sourceProxy = new SourceProxySource();
+        try {
+            SourceProxySource sourceProxy = new SourceProxySource();
+        } catch (RemoteException e) {
+            Log.Fatal("Failed to start SourceProxy.\n" + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
