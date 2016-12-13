@@ -46,10 +46,22 @@ public class Log {
         message(message, Level.INFO);
     }
 
+    public static void Info(String message, boolean printLine){
+        message(message, Level.INFO, printLine);
+    }
+
     private static void message(String message, Level level){
+        message(message, level, true);
+    }
+    private static void message(String message, Level level, boolean printLine){
         if(!shouldPrint(level)) return;
         PrintStream out = (level == Level.INFO)? System.out : System.err;
-        out.println(String.format("[%s][%s][%s]:\t%s", getDateTime(), Thread.currentThread().getName(), level, message));
+        String output = String.format("[%s][%s][%s]:\t%s", getDateTime(), Thread.currentThread().getName(), level, message);
+        if(printLine){
+            out.println(output);
+        } else {
+            out.print(output);
+        }
     }
 
     private static boolean shouldPrint(Level level){
