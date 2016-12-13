@@ -1,71 +1,20 @@
-import shared.interfaces.INotificationSink;
-import shared.interfaces.INotificationSource;
-import shared.notifications.Notification;
-import shared.util.Log;
-import shared.util.UUIDUtils;
+import client.GifClient;
+import client.Config;
 
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.UUID;
+import javax.swing.*;
 
 /**
- * Notification Client
+ * Client Bootstrapper
  *
  * @author Huw Jones
- * @since 03/12/2016
+ * @since 06/12/2016
  */
-public class Client implements INotificationSink {
+public class Client {
 
-    private INotificationSource server;
-    private Registry registry;
-    private UUID clientID = UUIDUtils.Base64StringToUUID("7pc27MVYQkiJcqZjjqE6qg==");
-
-    public Client(String rmiServer, String source) {
-        try {
-            this.registry = LocateRegistry.getRegistry(rmiServer);
-            this.server = (INotificationSource) this.registry.lookup(source);
-
-
-            INotificationSink sink = (INotificationSink) UnicastRemoteObject.exportObject(this, 0);
-            server.register(this.clientID, sink);
-
-        } catch (Exception e) {
-            Log.Fatal("Client exception:");
-            e.printStackTrace();
-        }
-    }
-
-
-    public static void main(String[] args) {
-        Client client = new Client(args[0], args[1]);
-    }
-
-    /**
-     * Notifies a Sink
-     *
-     * @param notification Notification
-     * @throws RemoteException
-     */
-    @Override
-    public void notify(Notification notification) throws RemoteException {
-        Log.Info(notification.toString());
-    }
-
-    private class ShutdownThread extends Thread {
-
-        public ShutdownThread() {
-            super("ShutdownThread");
-        }
-
-        @Override
-        public void run() {
-            if(clientID != null) try {
-                server.unRegister(clientID);
-            } catch (RemoteException e) {
-
-            }
-        }
+    public static void main(String[] args){
+        Config.loadConfig();
+        SwingUtilities.invokeLater(() -> {
+            GifClient gifClient = new GifClient();
+        });
     }
 }

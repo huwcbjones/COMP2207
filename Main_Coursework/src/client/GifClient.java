@@ -17,11 +17,8 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Function;
 
 /**
  * Client GUI Class
@@ -29,7 +26,7 @@ import java.util.function.Function;
  * @author Huw Jones
  * @since 06/12/2016
  */
-public class Client extends JFrame {
+public class GifClient extends JFrame {
 
     private static Sink sink = null;
     JPanel panel_gui;
@@ -48,10 +45,10 @@ public class Client extends JFrame {
     ActionListener rmiConnectListener = new RMIConnect();
     ActionListener sourceConnectListener = new SourceConnect();
 
-    public Client() {
+    public GifClient() {
         super("RMI Client");
         try {
-            Client.sink = new Sink(Config.getClientID());
+            GifClient.sink = new Sink(Config.getClientID());
         } catch (RemoteException ex) {
             Log.Fatal("Failed to load client: " + ex.getMessage());
             ex.printStackTrace();
@@ -233,7 +230,7 @@ public class Client extends JFrame {
                             button_connect.addActionListener(rmiConnectListener);
                             button_connect.removeActionListener(sourceConnectListener);
                             JOptionPane.showMessageDialog(
-                                    Client.this,
+                                    GifClient.this,
                                     ex.getMessage(),
                                     "Failed to connect.", JOptionPane.ERROR_MESSAGE);
                         });
@@ -251,7 +248,7 @@ public class Client extends JFrame {
             // Can't use SourceProxy to get a list of sources, so enable manual bind
             SwingUtilities.invokeLater(() -> {
 
-                Client.this.setTitle(String.format("RMI Client - %s:%s", rmiServer, port));
+                GifClient.this.setTitle(String.format("RMI Client - %s:%s", rmiServer, port));
                 button_connect.removeActionListener(rmiConnectListener);
                 button_connect.addActionListener(sourceConnectListener);
 
@@ -300,7 +297,7 @@ public class Client extends JFrame {
                 SwingUtilities.invokeLater(() -> {
                     window.dispose();
                     JOptionPane.showMessageDialog(
-                            Client.this,
+                            GifClient.this,
                             ex.getMessage(),
                             "Failed to connect", JOptionPane.ERROR_MESSAGE);
                 });
@@ -369,7 +366,7 @@ public class Client extends JFrame {
                     text_server.setEnabled(true);
                     text_port.setEnabled(true);
                     JOptionPane.showMessageDialog(
-                            Client.this,
+                            GifClient.this,
                             "Failed to connect to source.\n" + ex.getMessage(),
                             "Failed to connect.", JOptionPane.ERROR_MESSAGE);
                 });
@@ -393,7 +390,7 @@ public class Client extends JFrame {
                     sourceID = text_source.getText();
                 }
                 if (sourceID.length() == 0) {
-                    JOptionPane.showMessageDialog(Client.this,
+                    JOptionPane.showMessageDialog(GifClient.this,
                             "Please enter/select the ID of the source you'd like to connect to.",
                             "Failed to connect",
                             JOptionPane.ERROR_MESSAGE);
@@ -410,7 +407,7 @@ public class Client extends JFrame {
                 }
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
-                        Client.this,
+                        GifClient.this,
                         ex.getMessage(),
                         "Failed to connect", JOptionPane.ERROR_MESSAGE));
             }

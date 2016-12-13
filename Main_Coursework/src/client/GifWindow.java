@@ -7,7 +7,6 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.io.Closeable;
 
 /**
  * {DESCRIPTION}
@@ -49,7 +48,7 @@ public class GifWindow extends JFrame implements AutoCloseable {
          */
         @Override
         public void windowClosing(WindowEvent e) {
-           NotificationSink sink = Client.getSink();
+           NotificationSink sink = GifClient.getSink();
            sink.disconnectSource(sourceID);
         }
     }
