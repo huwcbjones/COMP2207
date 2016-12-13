@@ -72,13 +72,6 @@ public class NotificationSink extends UnicastRemoteObject implements INotificati
         try {
             // Connect and register with the proxy source
             INotificationSource proxy = (INotificationSource) registry.lookup("SourceProxy");
-            if(Config.getClientID() == null) {
-                UUID sinkID = proxy.register(this);
-                Config.setClientID(sinkID);
-            } else {
-                proxy.register(Config.getClientID(), this);
-            }
-            this.sourceProxy = proxy;
 
             // If the callback has been provided, combine the Log statement and callback into one callback and store it for later
             if(callbackHandler != null) {
@@ -89,8 +82,19 @@ public class NotificationSink extends UnicastRemoteObject implements INotificati
             } else {
                 this.callbackRegistry.put("SourceProxy", (e) -> Log.Info("Received list of sources (" + ((List<Pair<String, INotificationSource>>) e.getData()).size() + ")"));
             }
+
+            if(Config.getClientID() == null) {
+                UUID sinkID = proxy.register(this);
+                Config.setClientID(sinkID);
+            } else {
+                proxy.register(Config.getClientID(), this);
+            }
+            this.sourceProxy = proxy;
+
             Log.Info("Registering with SourceProxy!");
         } catch (RemoteException | NotBoundException | RegisterFailException ex) {
+            // Remove callback if connection failed.
+            this.callbackRegistry.remove("SourceProxy");
             throw new ConnectException("Failed to register with SourceProxy.", ex);
         }
     }

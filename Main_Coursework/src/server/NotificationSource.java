@@ -101,7 +101,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
 
         try {
             // Try to register using the proxy
-            INotificationSourceProxy proxy = (INotificationSourceProxy) registry.lookup("sourceproxy");
+            INotificationSourceProxy proxy = (INotificationSourceProxy) registry.lookup("SourceProxy");
             proxy.register(sourceID, this);
             this.proxy = proxy;
             Log.Info("Registered " + this.sourceID + "!");

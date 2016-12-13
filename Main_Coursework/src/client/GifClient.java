@@ -38,11 +38,10 @@ public class GifClient extends JFrame {
     JTextField text_server;
     JLabel label_port;
     JTextField text_port;
-
     ConcurrentHashMap<String, GifWindow> gifWindows = new ConcurrentHashMap<>();
-
     ActionListener rmiConnectListener = new RMIConnect();
     ActionListener sourceConnectListener = new SourceConnect();
+    private boolean shouldAutoconnect = true;
 
     public GifClient() {
         super("RMI Client");
@@ -304,73 +303,38 @@ public class GifClient extends JFrame {
         @SuppressWarnings("unchecked")
         public void run() {
             // Try to connect to SourceProxy
-            try {
-                // Connect to proxy server with a callback to update the combo box list
-                sink.connectRMIProxy(rmiServer, port, (n) -> {
-                    ArrayList<Pair<String, INotificationSource>> data = (ArrayList<Pair<String, INotificationSource>>) n.getData();
-                    SwingUtilities.invokeLater(() -> {
-                        combo_source.removeAllItems();
-                        data.stream().map(Pair::getKey).forEach(combo_source::addItem);
-                    });
-                });
-                SwingUtilities.invokeLater(() -> {
-                    combo_source.setVisible(true);
-                    text_source.setVisible(false);
-                });
-            } catch (ConnectException ex) {
-                Log.Error(ex.getMessage() + " " + ex.getCause().getMessage());
-            }
+            if(!connectProxy()) {
 
-            // The RMI server could be running, but not the proxy
-            if (!sink.isConnectedRMI()) {
-                // RMI server isn't running
-                SwingUtilities.invokeLater(() -> {
-                    button_connect.setEnabled(true);
-                    button_disconnect.setEnabled(false);
-                    combo_source.setEnabled(false);
-                    text_source.setEnabled(false);
-                    text_server.setEnabled(true);
-                    text_port.setEnabled(true);
-                    JOptionPane.showMessageDialog(
-                            GifClient.this,
-                            "Failed to connect to RMI Registry.",
-                            "Failed to connect.", JOptionPane.ERROR_MESSAGE);
-                });
-                return;
-            }
-
-            // Now we know the Proxy Server isn't running, so check that we are connected to the RMI Registry - if not, try to connect.
-            // The client can't get a list of sources that are registered, so let them manually type into a text box
-            if (!sink.isConnectedRMI()) {
-                Log.Info("Connecting to RMI registry...");
-                try {
-                    sink.connectRMI(rmiServer, port);
-                } catch (ConnectException ex) {
+                // Check if we connected to the RMI server, or not
+                if (!sink.isConnectedRMI()) {
+                    // RMI server isn't running
                     SwingUtilities.invokeLater(() -> {
                         button_connect.setEnabled(true);
                         button_disconnect.setEnabled(false);
                         combo_source.setEnabled(false);
+                        text_source.setEnabled(false);
                         text_server.setEnabled(true);
                         text_port.setEnabled(true);
-                        button_connect.addActionListener(rmiConnectListener);
-                        button_connect.removeActionListener(sourceConnectListener);
                         JOptionPane.showMessageDialog(
                                 GifClient.this,
-                                ex.getMessage(),
+                                "Failed to connect to RMI Registry.",
                                 "Failed to connect.", JOptionPane.ERROR_MESSAGE);
                     });
+                    return;
                 }
-            } else {
+
+                // Otherwise enable manual source specifying
                 SwingUtilities.invokeLater(() -> {
                     combo_source.setVisible(false);
                     text_source.setVisible(true);
                 });
+            } else {
+                SwingUtilities.invokeLater(() -> {
+                    combo_source.setVisible(true);
+                    text_source.setVisible(false);
+                });
             }
 
-
-            Log.Info("Connected to  RMI registry!");
-
-            // Can't use SourceProxy to get a list of sources, so enable manual bind
             SwingUtilities.invokeLater(() -> {
 
                 GifClient.this.setTitle(String.format("RMI Client - %s:%s", rmiServer, port));
@@ -386,10 +350,33 @@ public class GifClient extends JFrame {
             });
 
             // If autoconnect, then connect to all the sources
-            if(Config.isAutoconnect()) {
+            if(Config.isAutoconnect() && shouldAutoconnect) {
                 for (String source : Config.getSources()) {
                     sourceConnect(source);
                 }
+                shouldAutoconnect = false;
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private boolean connectProxy(){
+            try {
+                // Connect to proxy server with a callback to update the combo box list
+                sink.connectRMIProxy(rmiServer, port, (n) -> {
+                    ArrayList<Pair<String, INotificationSource>> data = (ArrayList<Pair<String, INotificationSource>>) n.getData();
+                    SwingUtilities.invokeLater(() -> {
+                        combo_source.removeAllItems();
+                        data.stream().map(Pair::getKey).forEach(combo_source::addItem);
+                    });
+                });
+                SwingUtilities.invokeLater(() -> {
+                    combo_source.setVisible(true);
+                    text_source.setVisible(false);
+                });
+                return true;
+            } catch (ConnectException ex) {
+                Log.Error(ex.getMessage() + " " + ex.getCause().getMessage());
+                return false;
             }
         }
     }
