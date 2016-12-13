@@ -3,6 +3,8 @@ package shared.util;
 import java.io.PrintStream;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 /**
@@ -14,7 +16,26 @@ import java.util.Date;
 public class Log {
 
     private static final SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-    private static Level logLevel = Level.TRACE;
+    private static Level logLevel = Level.INFO;
+
+    /**
+     * Sets the current Logging Level (from the program arguments)
+     * @param arguments Program args
+     */
+    public static void setLogLevel(String[] arguments){
+        ArrayList<String> argList = new ArrayList<>(Arrays.asList(arguments));
+        if (argList.contains("-v") || argList.contains("--verbosity")) {
+            int index = ( argList.contains("-v") ) ? argList.indexOf("-v") : argList.indexOf("--verbosity");
+            String levelStr = argList.get(index + 1).toUpperCase().trim();
+            try {
+                Level level = Level.valueOf(levelStr);
+                setLogLevel(level);
+            } catch (Exception ex){
+                Log.Error(String.format("Log level '%s' was not recognised", levelStr));
+            }
+
+        }
+    }
 
     public static void setLogLevel(Level level) {
         logLevel = level;

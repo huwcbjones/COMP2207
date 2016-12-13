@@ -13,6 +13,7 @@ import java.rmi.RemoteException;
 public class SourceProxy {
 
     public static void main(String[] args){
+        Log.setLogLevel(args);
         try {
             sourceproxy.SourceProxy sourceProxy = new sourceproxy.SourceProxy();
         } catch (RemoteException e) {

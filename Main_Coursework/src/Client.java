@@ -1,5 +1,6 @@
-import client.GifClient;
 import client.Config;
+import client.GifClient;
+import shared.util.Log;
 
 import javax.swing.*;
 
@@ -12,6 +13,7 @@ import javax.swing.*;
 public class Client {
 
     public static void main(String[] args){
+        Log.setLogLevel(args);
         Config.loadConfig();
         SwingUtilities.invokeLater(() -> {
             GifClient gifClient = new GifClient();

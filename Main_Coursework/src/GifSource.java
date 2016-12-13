@@ -14,6 +14,7 @@ import java.rmi.RemoteException;
 public class GifSource {
 
     public static void main(String[] args){
+        Log.setLogLevel(args);
         Config.loadConfig();
         File gifFile = null;
         if(Config.getServerID() == null){
