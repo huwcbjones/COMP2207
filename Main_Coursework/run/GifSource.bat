@@ -1,9 +1,3 @@
 @echo off
-pushd %cd%
-CD /D "out\Production\Main_Coursework"
-(CALL ..\..\..\StartRMI.bat)
-popd %cd%
-CD /D %cd%
-java -cp "out\production\Main_Coursework" ^
-	-Djava.rmi.server.codebase=file:out/production/Main_Coursework/ ^
-	GifSource %*
+(CALL StartRMI.bat)
+java -cp "Notification.jar" -Djava.rmi.server.useCodebaseOnly=false -Djava.rmi.server.codebase="https://www.huwcbjones.co.uk/Notification.jar" GifSource %*
