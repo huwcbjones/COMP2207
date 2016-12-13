@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -44,7 +45,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
     /**
      * Map of sinks (UUID=>sink) that are registered to this source
      */
-    private HashMap<UUID, INotificationSink> registeredSinks;
+    private ConcurrentHashMap<UUID, INotificationSink> registeredSinks;
     /**
      * Data structure to keep shared.util.notifications that cannot be delivered to sinks.
      * 1 queue for each sink.
@@ -55,7 +56,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
         super();
         Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
         this.sourceID = sourceID;
-        this.registeredSinks = new HashMap<>();
+        this.registeredSinks = new ConcurrentHashMap<>();
         this.notificationQueue = new HashMap<>();
     }
 
