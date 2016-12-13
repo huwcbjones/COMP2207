@@ -7,11 +7,13 @@ import shared.interfaces.INotificationSource;
 import shared.interfaces.INotificationSourceProxy;
 import shared.util.Log;
 
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -96,8 +98,12 @@ public class SourceProxySource extends NotificationSource implements INotificati
     public void unregister(String sourceID) throws RemoteException {
         // Store source
         sourceMap.remove(sourceID);
+        try {
+            registry.unbind(sourceID);
+        } catch (NotBoundException e) {
+            Log.Warn(String.format("Failed to unbind %s: %s", sourceID, e.getMessage()));
+        }
 
         updateSinks();
     }
-
 }

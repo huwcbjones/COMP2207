@@ -13,6 +13,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -34,6 +35,12 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
      * RMI Registry Server
      */
     protected Registry registry;
+
+    private INotificationSourceProxy proxy;
+
+    private String registryServer;
+    private int registryPort;
+
     /**
      * Map of sinks (UUID=>sink) that are registered to this source
      */
@@ -46,6 +53,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
 
     public NotificationSource(String sourceID) throws RemoteException {
         super();
+        Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
         this.sourceID = sourceID;
         this.registeredSinks = new HashMap<>();
         this.notificationQueue = new HashMap<>();
@@ -56,7 +64,12 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
     }
 
     public void bind(String registryServer, int registryPort) throws ConnectException {
+        this.proxy = null;
+
         registry = RMIUtils.connect(registryServer, registryPort);
+
+        this.registryServer = registryServer;
+        this.registryPort = registryPort;
 
         Log.Info("Registering " + this.sourceID + "...");
 
@@ -64,6 +77,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
             // Try to register using the proxy
             INotificationSourceProxy proxy = (INotificationSourceProxy) registry.lookup("SourceProxy");
             proxy.register(sourceID, this);
+            this.proxy = proxy;
             Log.Info("Registered " + this.sourceID + "!");
 
         } catch (RemoteException | NotBoundException ex) {
@@ -74,7 +88,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
                 throw new ConnectException("Failed to register source (using SourceProxy).", ex);
             }
 
-            Log.Info(String.format("Failed to register %s (using SourceProxy)... attempting straight bind", sourceID));
+            Log.Warn(String.format("Failed to register %s (using SourceProxy)... attempting straight bind", sourceID));
             try {
                 registry.rebind(sourceID, this);
                 Log.Info("Registered " + this.sourceID + "!");
@@ -263,5 +277,49 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
      */
     private void queueNotification(UUID sinkID, Notification notification) {
         this.notificationQueue.get(sinkID).add(notification);
+    }
+
+    /**
+     * Unbinds the source from the registry
+     */
+    private class ShutdownHandler extends Thread {
+
+        public ShutdownHandler() {
+            super("ShutdownHandler");
+        }
+
+        @Override
+        public void run() {
+            if (registry == null) {
+                return;
+            }
+
+            if (proxy != null) {
+                Log.Info("Unregistering " + sourceID + "...");
+                try {
+                    proxy.unregister(sourceID);
+                    Log.Info("Unregistered " + sourceID);
+                } catch (RemoteException e) {
+                    Log.Warn(String.format("Failed to unregister %s: %s", sourceID, e.getMessage()));
+                    e.printStackTrace();
+                }
+                return;
+            }
+
+            if (!registryServer.equals("localhost")) {
+                return;
+            }
+
+            try {
+                if (Arrays.stream(registry.list()).anyMatch(e -> e.equals(sourceID))) {
+                    Log.Info("Unbinding " + sourceID + "...");
+                    registry.unbind(sourceID);
+                    Log.Info("Unbound " + sourceID);
+                }
+            } catch (NotBoundException shouldNotHappen) {
+            } catch (RemoteException ex) {
+                Log.Warn("Failed to unbind " + sourceID);
+            }
+        }
     }
 }
