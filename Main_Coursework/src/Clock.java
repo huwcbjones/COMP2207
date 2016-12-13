@@ -1,12 +1,8 @@
-import shared.interfaces.INotificationSource;
 import shared.notifications.Notification;
 import shared.notifications.NotificationSource;
 import shared.util.Log;
 
-import java.net.BindException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
+import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -18,10 +14,11 @@ import java.util.Date;
  */
 public class Clock extends NotificationSource {
 
-    public Clock() {
+    public Clock() throws RemoteException {
         super("Clock");
         try {
-            this.bind("localhost");
+            //this.bind("HCBJ-MBP");
+            this.bind();
 
             Log.Info("Clock starting...");
             this.runClock();
@@ -32,7 +29,12 @@ public class Clock extends NotificationSource {
     }
 
     public static void main(String args[]) {
-        Clock clock = new Clock();
+        try {
+            Clock clock = new Clock();
+        } catch (RemoteException e) {
+            Log.Fatal("Failed to start Clock.\n" + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public void runClock() {
