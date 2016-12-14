@@ -10,4 +10,4 @@ IF EXIST out (
 :BUILD
 javac -d "out" -cp "src" -Xlint:unchecked src/*.java
 jar cvf out\Notification.jar -c  src\META-INF\MANIFEST.MF -C out .
-mv out\Notification.jar run\Notification.jar
+MOVE out\Notification.jar run\Notification.jar
