@@ -129,6 +129,7 @@ My Java source zip contains a selection of cat gifs and config files. The applic
   \item Client
   \item GifStreamer
 \end{enumerate*}.
+The diagram in \Cref{sec:system_diagram} shows how the application uses the framework and shows the class inheritance.
 
 \subsection{Client}
 The \texttt{GifClient} provides a GUI to connect to an RMI server and bound sources.
@@ -158,15 +159,28 @@ The, I began to test all the different scenarios: connecting, disconnecting, net
 This became tedious, so I created some helper scripts to start the applications for me.
 These scripts are included in the source zip.
 
+To run the application, first make sure the application has been built (run \texttt{build.sh} or \texttt{build.bat}).
+Then navigate to the \texttt{run} directory.
+To run the client, run either \texttt{./Client.sh} or \texttt{Client.bat}.
+To run sources, run either \texttt{./GifSource.sh -c [path to config file]}, or \texttt{GifSource -c [path to config file]} - this will start a source using a specified config file.
+There are 4 provided config files and gifs in the source zip.
+In order to connect to a source, type the source ID into the client and click connect - the source ID for the source is printed to the source console when it starts up.
+Please note the \texttt{rmiregistry} is automatically started when running \texttt{GifSource.sh}, \texttt{GifSource.bat}, \texttt{SourceProxy.sh}, \texttt{SourceProxy.bat}.
+
+To use the optional \texttt{SourceProxy} middleware, make sure \texttt{SourceProxy} is started before the sources/sinks.
+
+\includepdf[landscape=false,scale=0.9,pagecommand={\subsection{System Diagram}\label{sec:system_diagram}}]{SystemDiagram.pdf}
+
 %%
 %% SECTION: Sources and Sinks
 %%
 \section{Sources \& Sinks}
-To test multiple sinks and sources, I ran 3 sources and 2 sinks.
+To test multiple sinks and sources, I ran 3 sources and 3 sinks.
 \Cref{fig:testing} is a screenshot whilst testing my application.
 The consoles for the 3 sources are on the left side and both clients are on the right side.
 There are 4 windows open: 2 for each client, 1 for each source.
 This screenshot proves that multiple sinks can register with multiple sources and one sink can register with multiple sources.
+The 3rd sink was running on my computer and was receiving notifications.
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{testing}
@@ -240,5 +254,22 @@ I don't believe the bug prevents all the queued notifications from being sent, b
 %% SECTION: Conclusions
 %%
 \section{Conclusions}
+Overall, I do not believe Java RMI is suitable for any distributed object system.
+It is too buggy and fiddly to get it to work easily and reliably across multiple hosts.
+Information on how to use RMI is not centrally located, and when it is, some of it is out of date or fails to mention important issues.
+The Oracle website has a plethora of RMI guide and tutorials targeting different versions of Java, not located together.
+Even for tutorials targeting the same version of Java, two different tutorials/guides contradict on how RMI works.
+
+That said, when you find all this information and spend hours gleaning over the internet (see https://xkcd.com/979/),
+RMI works really well.
+However, I strongly dislike the fact that RMI ``hides'' things - I prefer raw Socket based communication, or using stream wrappers on sockets.
+
+For a publish-subscribe notification system, I don't believe RMI is the best solution.
+I would choose sockets every time given the choice  of sockets or RMI.
+If I had to choose how I implemented the notification system, I would have had Sources broadcasting UDP packets saying they are sending notifications of x type on y ip on z port.
+The client would listen for these packets and create a list to present to the end user.
+The end user connects via a TCP socket that is kept alive using a heartbeat or blocking thread, and the source sends notifications over this socket.
+Yes, this would require a lot more work to build a framework, but after having already built a similar framework for COMP1206 Auction System,
+I still feel the amount of work is justified to not have to use Java RMI.
 
 \end{document}

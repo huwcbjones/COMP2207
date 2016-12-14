@@ -114,6 +114,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
      * @throws ConnectException Thrown if failed to connect to the registry server
      */
     public void bind(String registryServer, int registryPort) throws ConnectException {
+        Log.Info("SourceID: " + sourceID);
         this.proxy = null;
 
         // Connect to the registry
