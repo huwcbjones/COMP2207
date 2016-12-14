@@ -171,8 +171,11 @@ public class GifStreamer extends NotificationSource {
         IIOMetadataNode graphicsControlExtensionNode = getNode(rootNode, "GraphicControlExtension");
 
         String delayTime = graphicsControlExtensionNode.getAttribute("delayTime");
-        Log.Info("Delay time: " + delayTime);
         this.interval = Integer.parseInt(graphicsControlExtensionNode.getAttribute("delayTime"));
+        if(this.interval == 0){
+            this.interval = 10;
+        }
+        Log.Info("Delay time: " + this.interval);
     }
 
     private void processImageList() {
