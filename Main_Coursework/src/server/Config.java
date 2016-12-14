@@ -9,6 +9,8 @@ import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Config Class
@@ -26,6 +28,21 @@ public class Config {
 
     private static String rmiServer = null;
     private static Integer rmiPort = null;
+
+    /**
+     * Sets the config file location from program arguments
+     *
+     * @param args Main arguments
+     */
+    public static void setConfigLocation(String[] args) {
+        ArrayList<String> argList = new ArrayList<>(Arrays.asList(args));
+        if (argList.contains("-c") || argList.contains("--conf")) {
+            int index = (argList.contains("-c")) ? argList.indexOf("-c") : argList.indexOf("--conf");
+            if (index + 1 < argList.size()) {
+                configLocation = argList.get(index + 1);
+            }
+        }
+    }
 
     /**
      * Get the RMI Server hostname
@@ -152,6 +169,10 @@ public class Config {
             b.append("serverID: ");
             b.append(serverID);
             b.append(";\n");
+        } else {
+            b.append("// uncomment and set a server ID string");
+            b.append("// serverID: ");
+            b.append(";\n");
         }
 
 
@@ -166,6 +187,10 @@ public class Config {
         if (source != null) {
             b.append("source: ");
             b.append(source);
+            b.append(";\n");
+        } else {
+            b.append("// set source to the (absolute or relative) path of the gif you want to stream from this source.");
+            b.append("// source: ");
             b.append(";\n");
         }
 
@@ -205,12 +230,14 @@ public class Config {
                 }
             }
         } catch (IOException e) {
-            Log.Warn("Failed to load config file. " + e.getMessage());
+            Log.Fatal("Failed to load config file: " + location);
+            Log.Info("Saving default config file...");
             try {
                 saveConfig(location);
             } catch (FileSystemException e1) {
                 Log.Error("Failed to save config file:" + e1.getMessage());
             }
+            System.exit(0);
         }
     }
 

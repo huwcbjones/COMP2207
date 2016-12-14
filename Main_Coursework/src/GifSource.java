@@ -15,6 +15,7 @@ public class GifSource {
 
     public static void main(String[] args){
         Log.setLogLevel(args);
+        Config.setConfigLocation(args);
         Config.loadConfig();
         File gifFile = null;
         if(Config.getServerID() == null){
