@@ -6,6 +6,7 @@ import shared.Notification;
 import shared.exceptions.ConnectException;
 import shared.util.ImageUtils;
 import shared.util.Log;
+import shared.util.RunnableAdapter;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -15,7 +16,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * GIF Streaming Source
@@ -25,10 +28,15 @@ import java.util.ArrayList;
  */
 public class GifStreamer extends NotificationSource {
 
+    private static DecimalFormat df = new DecimalFormat("00.00");
     /**
      * ArrayList of the frames of the GIF (stored as bytes so they can be serialised)
      */
     private ArrayList<byte[]> images;
+    private ConcurrentHashMap<Integer, BufferedImage> loadedImages;
+    private ConcurrentHashMap<Integer, byte[]> processedImages;
+
+    private double percentage = 0d;
 
     /**
      * Frame interval in 100th seconds (10 ms/0.01s)
@@ -39,20 +47,22 @@ public class GifStreamer extends NotificationSource {
         super(Config.getServerID() + " " + gifFile.getName().split("\\.")[0]);
 
         // Check file exists
-        if(!gifFile.exists()){
+        if (!gifFile.exists()) {
             Log.Fatal("Cannot start GifStreamer, file does not exist: " + gifFile.getAbsolutePath());
             return;
         }
         // And we can read it
-        if(!gifFile.canRead()){
+        if (!gifFile.canRead()) {
             Log.Fatal("Cannot start GifStreamer, cannot read file: " + gifFile.getAbsolutePath());
             return;
         }
 
         // Process GIF file and extract frames
         try {
-            ArrayList<BufferedImage> images = processGif(gifFile);
-            processImageList(images);
+            processGif(gifFile);
+            processImageList();
+            loadedImages = null;
+            processedImages = null;
         } catch (IOException e) {
             Log.Fatal("Failed to process gif!");
             return;
@@ -61,7 +71,7 @@ public class GifStreamer extends NotificationSource {
         // Bind the server to the registry
         try {
             bind();
-        } catch (ConnectException ex){
+        } catch (ConnectException ex) {
             Log.Fatal("Failed to bind server: " + ex.getMessage());
             ex.printStackTrace();
             return;
@@ -69,7 +79,9 @@ public class GifStreamer extends NotificationSource {
 
         // Start streaming thread
         Thread t = new StreamThread();
+        Log.Info("Starting source...");
         t.start();
+        Log.Info("Source started and ready for clients!");
     }
 
     /**
@@ -108,15 +120,48 @@ public class GifStreamer extends NotificationSource {
      * @param gif File to process
      * @throws IOException
      */
-    private ArrayList<BufferedImage> processGif(File gif) throws IOException {
+    private void processGif(File gif) throws IOException {
         // Read GIF file
         ImageReader ir = new PatchedGIFImageReader(new GIFImageReaderSpi());
         ir.setInput(ImageIO.createImageInputStream(gif));
 
+        int numberOfImages = ir.getNumImages(true);
+
+
+        MonitorThread m = new MonitorThread("Reading");
+        m.start();
+
+        loadedImages = new ConcurrentHashMap<>(numberOfImages);
         // Extract all the images from the file
-        ArrayList<BufferedImage> imageList = new ArrayList<>(ir.getNumImages(true));
-        for (int i = 0; i < ir.getNumImages(true); i++)
-            imageList.add(ir.read(i));
+        for (int i = 0; i < numberOfImages; i++) {
+            loadedImages.put(i, ir.read(i));
+            percentage = (i + 1) * 100d / numberOfImages;
+            synchronized (this) {
+                this.notify();
+            }
+        }
+        m.done();
+        System.out.println();
+        Log.Info("GIF loaded!");
+
+        percentage = 0d;
+        processedImages = new ConcurrentHashMap<>();
+        m = new MonitorThread("Converting");
+        m.start();
+        for (int i = 0; i < numberOfImages; i++) {
+            dispatchEvent(new ImageProcessor(i));
+        }
+        do {
+            synchronized (this) {
+                try {
+                    this.wait();
+                } catch (InterruptedException e) {
+                }
+            }
+        } while ((processedImages.size() != loadedImages.size()));
+        m.done();
+        System.out.println();
+        Log.Info("GIF converted!");
 
         // Get the frame interval time
         IIOMetadata gifMetaData = ir.getImageMetadata(0);
@@ -128,21 +173,30 @@ public class GifStreamer extends NotificationSource {
         String delayTime = graphicsControlExtensionNode.getAttribute("delayTime");
         Log.Info("Delay time: " + delayTime);
         this.interval = Integer.parseInt(graphicsControlExtensionNode.getAttribute("delayTime"));
-
-        return imageList;
     }
 
-    /**
-     * Process all the BufferedImages and convert them into bytes - suitable for transporting over the network
-     * @param imageList List of Buffered Images
-     */
-    private void processImageList(ArrayList<BufferedImage> imageList) {
-        this.images = new ArrayList<>(imageList.size());
-        for (int i = 0; i < imageList.size(); i++){
-            try {
-                this.images.add(ImageUtils.imageToBytes(imageList.get(i)));
-            } catch (IOException e) {
-                Log.Error("Failed to convert image to byte. Index: " + i);
+    private void processImageList() {
+        images = new ArrayList<>(processedImages.size());
+        for (int i = 0; i < processedImages.size(); i++) {
+            images.add(processedImages.get(i));
+        }
+    }
+
+    private class ImageProcessor extends RunnableAdapter {
+        int number;
+
+        public ImageProcessor(int number) {
+            this.number = number;
+        }
+
+        @Override
+        public void runSafe() throws Exception {
+            BufferedImage bufferedImage = loadedImages.get(number);
+            byte[] imageBytes = ImageUtils.imageToBytes(bufferedImage);
+            processedImages.put(number, imageBytes);
+            percentage = processedImages.size() * 100d / loadedImages.size();
+            synchronized (GifStreamer.this) {
+                GifStreamer.this.notify();
             }
         }
     }
@@ -168,6 +222,42 @@ public class GifStreamer extends NotificationSource {
                     }
                 }
             }
+        }
+    }
+
+    private class MonitorThread extends Thread {
+
+        boolean shouldQuit = false;
+        private String verb;
+
+        public MonitorThread(String verb) {
+            super("MonitorThread");
+            this.setDaemon(true);
+            this.verb = verb;
+        }
+
+        @Override
+        public void run() {
+            do {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Log.Info(String.format("%s GIF... %s%%\r", verb, df.format(percentage)), false);
+            } while (!shouldQuit);
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+
+            }
+            synchronized (GifStreamer.this){
+                GifStreamer.this.notifyAll();
+            }
+        }
+
+        public void done() {
+            shouldQuit = true;
         }
     }
 }

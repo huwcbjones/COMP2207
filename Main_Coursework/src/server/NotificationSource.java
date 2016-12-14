@@ -66,6 +66,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
         } catch (IOException e) {
             Log.Warn("Failed to add custom RMI Socket Factory...");
         }
+        startWorkers();
     }
 
     /**
@@ -114,8 +115,6 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
      */
     public void bind(String registryServer, int registryPort) throws ConnectException {
         this.proxy = null;
-
-        startWorkers();
 
         // Connect to the registry
         registry = RMIUtils.connect(registryServer, registryPort);

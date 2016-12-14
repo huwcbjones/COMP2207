@@ -24,7 +24,7 @@ public class Config {
 
     private static String serverID = null;
 
-    private static int threadNumber = Runtime.getRuntime().availableProcessors();
+    private static int threadNumber = Runtime.getRuntime().availableProcessors() * 8;
 
     private static String source = null;
 

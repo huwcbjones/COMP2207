@@ -25,9 +25,9 @@ public class CustomRMISocketFactory extends RMISocketFactory {
     @Override
     public Socket createSocket(String host, int port) throws IOException {
         Socket socket = new Socket();
-        socket.setSoTimeout( 100 );
+        //socket.setSoTimeout( 1500 );
         socket.setSoLinger( false, 0 );
-        socket.connect( new InetSocketAddress( host, port ), 100 );
+        socket.connect( new InetSocketAddress( host, port ), 250 );
         return socket;
     }
 
