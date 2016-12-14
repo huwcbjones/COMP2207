@@ -35,71 +35,73 @@ import java.util.List;
 public class PatchedGIFImageReader extends ImageReader {
 
     // Constants used to control interlacing.
-    static final int[] interlaceIncrement = {8, 8, 4, 2, -1};
-    static final int[] interlaceOffset = {0, 4, 2, 1, -1};
+    private static final int[] interlaceIncrement = {8, 8, 4, 2, -1};
+    private static final int[] interlaceOffset = {0, 4, 2, 1, -1};
 
     // Per-stream settings
     // The current ImageInputStream source.
-    ImageInputStream stream = null;
+    private ImageInputStream stream = null;
     // True if the file header including stream metadata has been read.
-    boolean gotHeader = false;
+    private boolean gotHeader = false;
     // Global metadata, read once per input setting.
-    GIFStreamMetadata streamMetadata = null;
+    private GIFStreamMetadata streamMetadata = null;
     // The current image index
-    int currIndex = -1;
+    private int currIndex = -1;
     // Metadata for image at 'currIndex', or null.
-    GIFImageMetadata imageMetadata = null;
+    private GIFImageMetadata imageMetadata = null;
     // A List of Longs indicating the stream positions of the
     // start of the metadata for each image.  Entries are added
     // as needed.
-    List imageStartPosition = new ArrayList();
+    private List<Long> imageStartPosition = new ArrayList<>();
     // Length of metadata for image at 'currIndex', valid only if
     // imageMetadata != null.
-    int imageMetadataLength;
+    private int imageMetadataLength;
     // The number of images in the stream, if known, otherwise -1.
-    int numImages = -1;
+    private int numImages = -1;
     // Variables used by the LZW decoding process
-    byte[] block = new byte[255];
-    int blockLength = 0;
-    int bitPos = 0;
-    int nextByte = 0;
-    int initCodeSize;
-    int clearCode;
-    int eofCode;
+    private final byte[] block = new byte[255];
+    private int blockLength = 0;
+    private int bitPos = 0;
+    private int nextByte = 0;
+    private int initCodeSize;
+    private int clearCode;
+    private int eofCode;
     // 32-bit lookahead buffer
-    int next32Bits = 0;
+    private int next32Bits = 0;
     // Try if the end of the data blocks has been found,
     // and we are simply draining the 32-bit buffer
-    boolean lastBlockFound = false;
+    private boolean lastBlockFound = false;
     // The image to be written.
-    BufferedImage theImage = null;
+    private BufferedImage theImage = null;
     // The image's tile.
-    WritableRaster theTile = null;
+    private WritableRaster theTile = null;
     // The image dimensions (from the stream).
-    int width = -1, height = -1;
+    private int width = -1;
+    private int height = -1;
     // The pixel currently being decoded (in the stream's coordinates).
-    int streamX = -1, streamY = -1;
+    private int streamX = -1;
+    private int streamY = -1;
     // The number of rows decoded
-    int rowsDone = 0;
+    private int rowsDone = 0;
 
     // End per-stream settings
     // The current interlace pass, starting with 0.
-    int interlacePass = 0;
-    Rectangle sourceRegion;
-    int sourceXSubsampling;
-    int sourceYSubsampling;
-    int sourceMinProgressivePass;
-    int sourceMaxProgressivePass;
-    Point destinationOffset;
-    Rectangle destinationRegion;
+    private int interlacePass = 0;
+    private Rectangle sourceRegion;
+    private int sourceXSubsampling;
+    private int sourceYSubsampling;
+    private int sourceMinProgressivePass;
+    private int sourceMaxProgressivePass;
+    private Point destinationOffset;
+    private Rectangle destinationRegion;
     // Used only if IIOReadUpdateListeners are present
-    int updateMinY;
-    int updateYStep;
-    boolean decodeThisRow = true;
+    private int updateMinY;
+    private int updateYStep;
+    private boolean decodeThisRow = true;
 
     // BEGIN LZW STUFF
-    int destY = 0;
-    byte[] rowBuf;
+    private int destY = 0;
+    private byte[] rowBuf;
 
     public PatchedGIFImageReader(ImageReaderSpi originatingProvider) {
         super(originatingProvider);
@@ -175,7 +177,7 @@ public class PatchedGIFImageReader extends ImageReader {
         return imageMetadata.imageHeight;
     }
 
-    public Iterator getImageTypes(int imageIndex) throws IIOException {
+    public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IIOException {
         checkIndex(imageIndex);
 
         int index = locateImage(imageIndex);
@@ -184,7 +186,7 @@ public class PatchedGIFImageReader extends ImageReader {
         }
         readMetadata();
 
-        List l = new ArrayList(1);
+        List<ImageTypeSpecifier> l = new ArrayList<>(1);
 
         byte[] colorTable;
         if (imageMetadata.localColorTable != null) {
@@ -311,10 +313,10 @@ public class PatchedGIFImageReader extends ImageReader {
         return code;
     }
 
-    public void initializeStringTable(int[] prefix,
-                                      byte[] suffix,
-                                      byte[] initial,
-                                      int[] length) {
+    private void initializeStringTable(int[] prefix,
+                                       byte[] suffix,
+                                       byte[] initial,
+                                       int[] length) {
         int numEntries = 1 << initCodeSize;
         for (int i = 0; i < numEntries; i++) {
             prefix[i] = -1;
@@ -536,8 +538,8 @@ public class PatchedGIFImageReader extends ImageReader {
             int index = Math.min(imageIndex, imageStartPosition.size() - 1);
 
             // Seek to that position
-            Long l = (Long) imageStartPosition.get(index);
-            stream.seek(l.longValue());
+            Long l = imageStartPosition.get(index);
+            stream.seek(l);
 
             // Skip images until at desired index or last image found
             while (index < imageIndex) {
@@ -546,7 +548,7 @@ public class PatchedGIFImageReader extends ImageReader {
                     return index;
                 }
 
-                Long l1 = new Long(stream.getStreamPosition());
+                Long l1 = stream.getStreamPosition();
                 imageStartPosition.add(l1);
                 ++index;
             }
@@ -803,7 +805,7 @@ public class PatchedGIFImageReader extends ImageReader {
         }
 
         // Initialize the destination image
-        Iterator imageTypes = getImageTypes(imageIndex);
+        Iterator<ImageTypeSpecifier> imageTypes = getImageTypes(imageIndex);
         this.theImage = getDestination(param,
                 imageTypes,
                 imageMetadata.imageWidth,
@@ -916,12 +918,10 @@ public class PatchedGIFImageReader extends ImageReader {
                     try {
                         int ti = tableIndex;
 
-                        int oc = oldCode;
-
-                        prefix[ti] = oc;
+                        prefix[ti] = oldCode;
                         suffix[ti] = initial[newSuffixIndex];
-                        initial[ti] = initial[oc];
-                        length[ti] = length[oc] + 1;
+                        initial[ti] = initial[oldCode];
+                        length[ti] = length[oldCode] + 1;
 
                         ++tableIndex;
                         if ((tableIndex == (1 << codeSize)) &&
@@ -983,7 +983,7 @@ public class PatchedGIFImageReader extends ImageReader {
         streamMetadata = null;
         currIndex = -1;
         imageMetadata = null;
-        imageStartPosition = new ArrayList();
+        imageStartPosition = new ArrayList<Long>();
         numImages = -1;
 
         // No need to reinitialize 'block'

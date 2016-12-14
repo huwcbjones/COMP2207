@@ -68,7 +68,7 @@ public final class WorkerPool {
      *
      * @param task Task to run
      */
-    public void queueTask(Callable task) {
+    public void queueTask(Callable<Object> task) {
         if (this.workerPool.isShutdown()) {
             Log.Warn(String.format("Failed to queue task (%s). Worker Pool shutting down...", task.toString()));
             return;
@@ -99,7 +99,7 @@ public final class WorkerPool {
      * @param task      Task to run
      * @param timeDelay Time to delay task (in milliseconds);
      */
-    public void scheduleTask(Callable task, long timeDelay) {
+    public void scheduleTask(Callable<Object> task, long timeDelay) {
         if (this.workerPool.isShutdown()) {
             Log.Warn(String.format("Failed to schedule task (%s). Worker Pool shutting down...", task.toString()));
             return;
