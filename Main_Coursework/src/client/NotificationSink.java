@@ -7,12 +7,15 @@ import shared.exceptions.RegisterFailException;
 import shared.interfaces.INotificationSink;
 import shared.interfaces.INotificationSource;
 import shared.interfaces.ISinkCallbackHandler;
+import shared.util.CustomRMISocketFactory;
 import shared.util.Log;
 import shared.util.RMIUtils;
 
+import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.rmi.server.RMISocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +42,12 @@ public class NotificationSink extends UnicastRemoteObject implements INotificati
         Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
         sources = new ConcurrentHashMap<>();
         callbackRegistry = new HashMap<>();
+
+        try {
+            RMISocketFactory.setSocketFactory(new CustomRMISocketFactory());
+        } catch (IOException e) {
+            Log.Warn("Failed to add custom RMI Socket Factory...");
+        }
     }
 
     /**

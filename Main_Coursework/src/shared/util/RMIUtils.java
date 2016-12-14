@@ -26,7 +26,7 @@ public class RMIUtils {
         try {
             Registry registry;
             Log.Info("Locating registry...");
-            registry = LocateRegistry.getRegistry(server, port);
+            registry = LocateRegistry.getRegistry(server, port, new CustomRMISocketFactory());
 
             // By calling list, it either succeeds (registry connected), or throws a RemoteException (connection failed)
             registry.list();

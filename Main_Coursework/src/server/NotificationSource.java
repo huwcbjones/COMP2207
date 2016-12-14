@@ -6,13 +6,13 @@ import shared.exceptions.RegisterFailException;
 import shared.interfaces.INotificationSink;
 import shared.interfaces.INotificationSource;
 import shared.interfaces.INotificationSourceProxy;
-import shared.util.Log;
-import shared.util.RMIUtils;
-import shared.util.UUIDUtils;
+import shared.util.*;
 
+import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.rmi.server.RMISocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @since 02/12/2016
  */
 public abstract class NotificationSource extends UnicastRemoteObject implements INotificationSource {
+    protected static WorkerPool workPool;
     /**
      * ID of the source (used to bind to the registry server)
      */
@@ -37,12 +38,9 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
      * RMI Registry Server
      */
     protected Registry registry;
-
     private INotificationSourceProxy proxy;
-
     private String registryServer;
     private int registryPort;
-
     /**
      * Map of sinks (UUID=>sink) that are registered to this source
      */
@@ -63,6 +61,33 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
         this.sourceID = sourceID;
         this.registeredSinks = new ConcurrentHashMap<>();
         this.notificationQueue = new HashMap<>();
+        try {
+            RMISocketFactory.setSocketFactory(new CustomRMISocketFactory());
+        } catch (IOException e) {
+            Log.Warn("Failed to add custom RMI Socket Factory...");
+        }
+    }
+
+    /**
+     * Dispatches an event handler in the EDT (any worker pool thread).
+     * Or, if the server isn't running, just run the event handler in the current thread.
+     *
+     * @param event Event to dispatch
+     */
+    public static void dispatchEvent(RunnableAdapter event) {
+        if (NotificationSource.workPool != null &&NotificationSource.workPool.isRunning()) {
+            NotificationSource.workPool.dispatchEvent(event);
+        } else {
+            event.run();
+        }
+    }
+
+    /**
+     * Starts the Worker Pool
+     */
+    private void startWorkers() {
+        Log.Info("Starting workers...");
+        NotificationSource.workPool = new WorkerPool(Config.getThreadNumber());
     }
 
     /**
@@ -89,6 +114,8 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
      */
     public void bind(String registryServer, int registryPort) throws ConnectException {
         this.proxy = null;
+
+        startWorkers();
 
         // Connect to the registry
         registry = RMIUtils.connect(registryServer, registryPort);
@@ -313,22 +340,7 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
      * @param notification Notification to send
      */
     protected void sendNotification(Notification notification) {
-        registeredSinks.entrySet().forEach(map -> {
-            UUID id = map.getKey();
-            INotificationSink sink = map.getValue();
-            try {
-                Log.Trace("Sending message to: " + UUIDUtils.UUIDToBase64String(id));
-                sink.notify(notification);
-
-                // If we successfully sent a notification, check if the queue is empty, if not, empty it (as we can now send notifications)
-                if(notificationQueue.get(id).size() != 0){
-                    sendQueue(id);
-                }
-            } catch (RemoteException e) {
-                Log.Warn(String.format("Failed to send message to: %s. Queuing for delivery later. ", UUIDUtils.UUIDToBase64String(id)));
-                this.queueNotification(id, notification);
-            }
-        });
+        registeredSinks.entrySet().forEach(map -> dispatchEvent(new NotificationProcessor(map, notification)));
     }
 
     /**
@@ -339,6 +351,34 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
      */
     private void queueNotification(UUID sinkID, Notification notification) {
         this.notificationQueue.get(sinkID).add(notification);
+    }
+
+    private class NotificationProcessor extends RunnableAdapter {
+
+        UUID sinkID;
+        INotificationSink sink;
+        Notification notification;
+
+        public NotificationProcessor(Map.Entry<UUID, INotificationSink> sinkEntry, Notification notification){
+            sinkID = sinkEntry.getKey();
+            sink = sinkEntry.getValue();
+            this.notification = notification;
+        }
+        @Override
+        public void runSafe() throws Exception {
+            try {
+                Log.Trace("Sending message to: " + UUIDUtils.UUIDToBase64String(sinkID));
+                sink.notify(notification);
+
+                // If we successfully sent a notification, check if the queue is empty, if not, empty it (as we can now send notifications)
+                if(notificationQueue.get(sinkID).size() != 0){
+                    sendQueue(sinkID);
+                }
+            } catch (RemoteException e) {
+                Log.Warn(String.format("Failed to send message to: %s. Queuing for delivery later. ", UUIDUtils.UUIDToBase64String(sinkID)));
+                queueNotification(sinkID, notification);
+            }
+        }
     }
 
     /**
@@ -381,6 +421,10 @@ public abstract class NotificationSource extends UnicastRemoteObject implements 
             } catch (NotBoundException shouldNotHappen) {
             } catch (RemoteException ex) {
                 Log.Warn("Failed to unbind " + sourceID);
+            }
+
+            if(NotificationSource.workPool != null){
+                NotificationSource.workPool.shutdown();
             }
         }
     }

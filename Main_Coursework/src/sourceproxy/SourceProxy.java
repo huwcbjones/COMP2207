@@ -11,7 +11,6 @@ import shared.util.Log;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -76,10 +75,10 @@ public class SourceProxy extends NotificationSource implements INotificationSour
         sourceMap.put(sourceID, source);
 
         // Export object (the received object should have already been exported, but better make sure)
-        INotificationSource sourceStub = (INotificationSource) UnicastRemoteObject.exportObject(source, 0);
+        //INotificationSource sourceStub = (INotificationSource) UnicastRemoteObject.exportObject(source, 0);
 
         // Bind the source, then tell all sinks there is a new source
-        registry.rebind(sourceID, sourceStub);
+        registry.rebind(sourceID, source);
         Log.Info(String.format("Registered Source: %s", sourceID));
         updateSinks();
     }

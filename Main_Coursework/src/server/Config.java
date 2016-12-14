@@ -24,6 +24,8 @@ public class Config {
 
     private static String serverID = null;
 
+    private static int threadNumber = Runtime.getRuntime().availableProcessors();
+
     private static String source = null;
 
     private static String rmiServer = null;
@@ -121,6 +123,23 @@ public class Config {
     }
 
     /**
+     * Get the number of threads in the worker pool
+     * @return Number of threads
+     */
+    public static int getThreadNumber() {
+        return threadNumber;
+    }
+
+    /**
+     * Set the number of threads in the worker pool
+     * @param threadNumber Number of threads
+     */
+    public static void setThreadNumber(int threadNumber) {
+        Config.threadNumber = threadNumber;
+        saveConfig();
+    }
+
+    /**
      * Saves the config to the file specified by configLocation.
      */
     public static void saveConfig() {
@@ -175,6 +194,9 @@ public class Config {
             b.append(";\n");
         }
 
+        b.append("threads: ");
+        b.append(threadNumber);
+        b.append(";\n");
 
         if (rmiServer != null && rmiPort != null) {
             b.append("server: ");
@@ -262,7 +284,7 @@ public class Config {
         }
 
         // Strip semicolon out
-        strings[1] = strings[1].replace(";", "");
+        strings[1] = strings[1].replace(";", "").trim();
 
         // Parse data
         switch (strings[0]) {
@@ -278,7 +300,11 @@ public class Config {
                 rmiPort = Integer.parseInt(server[1].trim());
                 break;
             case "source":
-                source = strings[1].trim();
+                source = strings[1];
+                break;
+            case "threads":
+                threadNumber = Integer.parseInt(strings[1]);
+                break;
         }
     }
 }
