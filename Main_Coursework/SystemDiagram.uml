@@ -3,129 +3,196 @@
   <ID>JAVA</ID>
   <OriginalElement>client.NotificationSink</OriginalElement>
   <nodes>
-    <node x="950.75" y="268.0">server.NotificationSource</node>
-    <node x="1210.0" y="611.0">sourceproxy.SourceProxy</node>
-    <node x="0.0" y="79.0">shared.Notification</node>
-    <node x="156.12513966480452" y="502.47932960893854">server.WorkerPool.WorkerPoolFactory</node>
-    <node x="-3.8748603351954785" y="502.47932960893854">server.WorkerPool.TaskCleanup</node>
-    <node x="1024.75" y="644.0">server.GifStreamer</node>
-    <node x="1239.717261904762" y="79.0">shared.interfaces.INotificationSource</node>
-    <node x="1493.3910614525141" y="373.43066418373684">shared.interfaces.INotificationSourceProxy</node>
-    <node x="450.75" y="268.0">client.NotificationSink</node>
-    <node x="-411.7777777777777" y="194.05555555555543">shared.interfaces.ISinkCallbackHandler</node>
-    <node x="516.0" y="79.0">java.rmi.server.UnicastRemoteObject</node>
-    <node x="797.8422619047619" y="0.0">java.rmi.Remote</node>
-    <node x="947.7172619047619" y="756.0">server.GifStreamer.StreamThread</node>
-    <node x="312.8422619047619" y="0.0">java.io.Serializable</node>
-    <node x="1085.717261904762" y="756.0">server.GifStreamer.ImageProcessor</node>
-    <node x="266.0" y="112.0">client.GifClient</node>
-    <node x="21.62513966480452" y="269.47932960893854">server.WorkerPool</node>
-    <node x="755.0" y="123.0">shared.interfaces.INotificationSink</node>
+    <node x="1273.9492753623188" y="389.0">client.GifClient.RMIConnect</node>
+    <node x="546.9492753623188" y="633.0">server.NotificationSource.ShutdownHandler</node>
+    <node x="2135.288043478261" y="400.0">shared.Notification.PRIORITY</node>
+    <node x="308.94927536231876" y="268.0">server.NotificationSource</node>
+    <node x="65.75" y="611.0">sourceproxy.SourceProxy</node>
+    <node x="1999.5380434782608" y="79.0">shared.Notification</node>
+    <node x="1460.438202247191" y="724.8595505617977">server.WorkerPool.TaskCleanup</node>
+    <node x="1232.438202247191" y="724.8595505617977">server.WorkerPool.WorkerPoolFactory</node>
+    <node x="432.94927536231876" y="644.0">server.GifStreamer</node>
+    <node x="177.55797101449275" y="79.0">shared.interfaces.INotificationSource</node>
+    <node x="1533.9492753623188" y="389.0">client.GifClient.ConnectThread</node>
+    <node x="0.0" y="378.0">shared.interfaces.INotificationSourceProxy</node>
+    <node x="801.9492753623188" y="268.0">client.NotificationSink</node>
+    <node x="970.5" y="79.0">java.rmi.server.UnicastRemoteObject</node>
+    <node x="1666.9492753623188" y="389.0">client.GifClient.SourceConnectThread</node>
+    <node x="694.9492753623188" y="633.0">server.NotificationSource.NotificationProcessor</node>
+    <node x="1835.9492753623188" y="389.0">client.GifClient.SourceConnect</node>
+    <node x="858.1992753623188" y="0.0">java.rmi.Remote</node>
+    <node x="552.4492753623188" y="756.0">server.GifStreamer.MonitorThread</node>
+    <node x="427.44927536231876" y="767.0">server.GifStreamer.StreamThread</node>
+    <node x="1779.3242753623188" y="0.0">java.io.Serializable</node>
+    <node x="280.44927536231876" y="767.0">server.GifStreamer.ImageProcessor</node>
+    <node x="1561.9492753623188" y="112.0">client.GifClient</node>
+    <node x="1290.188202247191" y="491.85955056179773">server.WorkerPool</node>
+    <node x="769.5" y="123.0">shared.interfaces.INotificationSink</node>
   </nodes>
   <notes />
   <edges>
+    <edge source="server.NotificationSource.NotificationProcessor" target="server.NotificationSource">
+      <point x="0.0" y="-25.5" />
+      <point x="767.9492753623188" y="586.0" />
+      <point x="722.8242753623188" y="586.0" />
+      <point x="177.375" y="146.5" />
+    </edge>
+    <edge source="client.GifClient.SourceConnect" target="client.GifClient">
+      <point x="2.2737367544323206E-13" y="-25.5" />
+      <point x="1955.949275362319" y="238.0" />
+      <point x="1743.9492753623188" y="238.0" />
+      <point x="78.0" y="36.5" />
+    </edge>
     <edge source="server.WorkerPool.WorkerPoolFactory" target="server.WorkerPool">
       <point x="0.0" y="-25.5" />
-      <point x="273.1251396648045" y="477.47932960893854" />
-      <point x="243.62513966480452" y="477.47932960893854" />
-      <point x="74.0" y="91.5" />
+      <point x="1336.438202247191" y="699.8595505617977" />
+      <point x="1360.188202247191" y="699.8595505617977" />
+      <point x="-70.0" y="91.5" />
     </edge>
     <edge source="client.NotificationSink" target="shared.interfaces.INotificationSink">
-      <point x="120.0" y="-146.5" />
-      <point x="810.75" y="248.0" />
-      <point x="855.0" y="248.0" />
+      <point x="-113.0" y="-146.5" />
+      <point x="914.9492753623188" y="238.0" />
+      <point x="860.0" y="238.0" />
       <point x="0.0" y="25.5" />
     </edge>
     <edge source="sourceproxy.SourceProxy" target="shared.interfaces.INotificationSourceProxy">
-      <point x="0.0" y="0.0" />
-      <point x="0.0" y="0.0" />
+      <point x="-76.75" y="-47.5" />
+      <point x="0.0" y="36.5" />
     </edge>
     <edge source="client.GifClient" target="java.io.Serializable">
       <point x="0.0" y="-36.5" />
-      <point x="381.0" y="54.0" />
-      <point x="362.8422619047619" y="54.0" />
-      <point x="0.0" y="14.5" />
+      <point x="1665.9492753623188" y="59.0" />
+      <point x="1813.0742753623188" y="59.0" />
+      <point x="-11.25" y="14.5" />
     </edge>
     <edge source="client.NotificationSink" target="java.rmi.server.UnicastRemoteObject">
-      <point x="-120.0" y="-146.5" />
-      <point x="-54.75" y="69.5" />
+      <point x="113.0" y="-146.5" />
+      <point x="1140.9492753623188" y="248.0" />
+      <point x="1126.5" y="248.0" />
+      <point x="52.0" y="69.5" />
     </edge>
     <edge source="java.rmi.server.UnicastRemoteObject" target="java.rmi.Remote">
-      <point x="54.75" y="-69.5" />
-      <point x="680.25" y="54.0" />
-      <point x="810.8422619047619" y="54.0" />
-      <point x="-26.0" y="14.5" />
+      <point x="-52.0" y="-69.5" />
+      <point x="1022.5" y="59.0" />
+      <point x="919.0326086956521" y="59.0" />
+      <point x="24.33333333333337" y="14.5" />
+    </edge>
+    <edge source="client.GifClient.SourceConnectThread" target="client.GifClient">
+      <point x="0.0" y="-25.5" />
+      <point x="1741.4492753623188" y="248.0" />
+      <point x="1691.9492753623188" y="248.0" />
+      <point x="26.0" y="36.5" />
     </edge>
     <edge source="server.NotificationSource" target="java.rmi.server.UnicastRemoteObject">
-      <point x="-126.5" y="-146.5" />
-      <point x="1077.25" y="238.0" />
-      <point x="680.25" y="238.0" />
-      <point x="54.75" y="69.5" />
+      <point x="118.25" y="-146.5" />
+      <point x="663.6992753623188" y="248.0" />
+      <point x="1022.5" y="248.0" />
+      <point x="-52.0" y="69.5" />
+    </edge>
+    <edge source="client.GifClient.RMIConnect" target="client.GifClient">
+      <point x="0.0" y="-25.5" />
+      <point x="1393.9492753623188" y="238.0" />
+      <point x="1587.9492753623188" y="238.0" />
+      <point x="-78.0" y="36.5" />
+    </edge>
+    <edge source="client.GifClient.ConnectThread" target="client.GifClient">
+      <point x="0.0" y="-25.5" />
+      <point x="1590.4492753623188" y="248.0" />
+      <point x="1639.9492753623188" y="248.0" />
+      <point x="-26.0" y="36.5" />
     </edge>
     <edge source="sourceproxy.SourceProxy" target="server.NotificationSource">
-      <point x="-85.75" y="-47.5" />
-      <point x="1295.75" y="586.0" />
-      <point x="1330.25" y="586.0" />
-      <point x="126.5" y="146.5" />
+      <point x="76.75" y="-47.5" />
+      <point x="296.0" y="586.0" />
+      <point x="368.07427536231876" y="586.0" />
+      <point x="-177.375" y="146.5" />
     </edge>
     <edge source="server.GifStreamer" target="server.NotificationSource">
       <point x="0.0" y="-14.5" />
-      <point x="-126.5" y="146.5" />
+      <point x="479.94927536231876" y="586.0" />
+      <point x="486.32427536231876" y="586.0" />
+      <point x="-59.125" y="146.5" />
+    </edge>
+    <edge source="server.NotificationSource.ShutdownHandler" target="server.NotificationSource">
+      <point x="0.0" y="-25.5" />
+      <point x="610.9492753623188" y="586.0" />
+      <point x="604.5742753623188" y="586.0" />
+      <point x="59.125" y="146.5" />
+    </edge>
+    <edge source="shared.Notification.PRIORITY" target="shared.Notification">
+      <point x="-20.25" y="-14.5" />
+      <point x="2155.538043478261" y="248.0" />
+      <point x="2113.538043478261" y="248.0" />
+      <point x="0.0" y="69.5" />
     </edge>
     <edge source="server.WorkerPool.TaskCleanup" target="server.WorkerPool">
       <point x="0.0" y="-25.5" />
-      <point x="66.12513966480452" y="477.47932960893854" />
-      <point x="95.62513966480452" y="477.47932960893854" />
-      <point x="-74.0" y="91.5" />
+      <point x="1523.938202247191" y="699.8595505617977" />
+      <point x="1500.188202247191" y="699.8595505617977" />
+      <point x="70.0" y="91.5" />
     </edge>
     <edge source="java.rmi.server.UnicastRemoteObject" target="java.io.Serializable">
-      <point x="-54.75" y="-69.5" />
-      <point x="570.75" y="54.0" />
-      <point x="396.1755952380952" y="54.0" />
-      <point x="33.33333333333326" y="14.5" />
-    </edge>
-    <edge source="shared.interfaces.INotificationSourceProxy" target="shared.interfaces.INotificationSource">
-      <point x="0.0" y="0.0" />
-      <point x="0.0" y="0.0" />
+      <point x="52.0" y="-69.5" />
+      <point x="1126.5" y="49.0" />
+      <point x="1790.5742753623188" y="49.0" />
+      <point x="-33.75" y="14.5" />
     </edge>
     <edge source="server.GifStreamer.StreamThread" target="server.GifStreamer">
       <point x="0.0" y="-25.5" />
-      <point x="1006.7172619047619" y="731.0" />
-      <point x="1051.0" y="731.0" />
-      <point x="-26.25" y="14.5" />
+      <point x="0.0" y="14.5" />
+    </edge>
+    <edge source="shared.interfaces.INotificationSourceProxy" target="shared.interfaces.INotificationSource">
+      <point x="0.0" y="-36.5" />
+      <point x="142.5" y="248.0" />
+      <point x="252.05797101449275" y="248.0" />
+      <point x="-74.5" y="69.5" />
+    </edge>
+    <edge source="shared.Notification.PRIORITY" target="java.io.Serializable">
+      <point x="20.25" y="-14.5" />
+      <point x="2196.038043478261" y="248.0" />
+      <point x="2238.038043478261" y="248.0" />
+      <point x="2238.038043478261" y="49.0" />
+      <point x="1858.0742753623188" y="49.0" />
+      <point x="33.75" y="14.5" />
     </edge>
     <edge source="shared.interfaces.INotificationSink" target="java.rmi.Remote">
       <point x="0.0" y="-25.5" />
-      <point x="855.0" y="54.0" />
-      <point x="836.8422619047619" y="54.0" />
+      <point x="860.0" y="59.0" />
+      <point x="894.6992753623188" y="59.0" />
       <point x="0.0" y="14.5" />
     </edge>
     <edge source="server.NotificationSource" target="shared.interfaces.INotificationSource">
-      <point x="126.5" y="-146.5" />
-      <point x="1330.25" y="248.0" />
-      <point x="1321.217261904762" y="248.0" />
-      <point x="-81.5" y="69.5" />
+      <point x="-118.25" y="-146.5" />
+      <point x="427.19927536231876" y="248.0" />
+      <point x="401.05797101449275" y="248.0" />
+      <point x="74.5" y="69.5" />
     </edge>
     <edge source="shared.interfaces.INotificationSource" target="java.rmi.Remote">
       <point x="0.0" y="-69.5" />
-      <point x="1402.717261904762" y="54.0" />
-      <point x="862.8422619047619" y="54.0" />
-      <point x="26.0" y="14.5" />
+      <point x="326.55797101449275" y="49.0" />
+      <point x="870.3659420289854" y="49.0" />
+      <point x="-24.33333333333337" y="14.5" />
     </edge>
-    <edge source="server.GifStreamer.ImageProcessor" target="server.GifStreamer">
-      <point x="0.0" y="-25.5" />
-      <point x="1155.717261904762" y="731.0" />
-      <point x="1103.5" y="731.0" />
-      <point x="26.25" y="14.5" />
+    <edge source="server.GifStreamer.MonitorThread" target="server.GifStreamer">
+      <point x="0.0" y="-36.5" />
+      <point x="614.9492753623188" y="731.0" />
+      <point x="511.282608695652" y="731.0" />
+      <point x="31.333333333333314" y="14.5" />
     </edge>
     <edge source="shared.Notification" target="java.io.Serializable">
       <point x="0.0" y="-69.5" />
-      <point x="123.0" y="54.0" />
-      <point x="329.50892857142867" y="54.0" />
-      <point x="-33.33333333333326" y="14.5" />
+      <point x="2113.538043478261" y="59.0" />
+      <point x="1835.5742753623188" y="59.0" />
+      <point x="11.25" y="14.5" />
+    </edge>
+    <edge source="server.GifStreamer.ImageProcessor" target="server.GifStreamer">
+      <point x="0.0" y="-25.5" />
+      <point x="343.94927536231876" y="731.0" />
+      <point x="448.6159420289855" y="731.0" />
+      <point x="-31.333333333333314" y="14.5" />
     </edge>
   </edges>
-  <settings layout="Hierarchic Group" zoom="0.9" x="906.0" y="403.5" />
+  <settings layout="Hierarchic Group" zoom="0.7091633466135459" x="1119.5" y="414.5" />
   <SelectedNodes />
   <Categories>
     <Category>Inner Classes</Category>
