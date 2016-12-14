@@ -113,6 +113,7 @@ public class SourceProxy extends NotificationSource implements INotificationSour
         sourceMap.remove(sourceID);
         try {
             registry.unbind(sourceID);
+            Log.Info(String.format("Unregistered Source: %s", sourceID));
         } catch (NotBoundException e) {
             Log.Warn(String.format("Failed to unbind %s: %s", sourceID, e.getMessage()));
         }
