@@ -1,4 +1,4 @@
-package client.util;
+package server.util;
 
 
 import com.sun.imageio.plugins.common.ReaderUtil;

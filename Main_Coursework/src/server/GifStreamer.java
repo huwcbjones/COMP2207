@@ -1,6 +1,6 @@
 package server;
 
-import client.util.PatchedGIFImageReader;
+import server.util.PatchedGIFImageReader;
 import com.sun.imageio.plugins.gif.GIFImageReaderSpi;
 import shared.Notification;
 import shared.exceptions.ConnectException;
