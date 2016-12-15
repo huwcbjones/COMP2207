@@ -7,6 +7,7 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{pdfpages}
+\usepackage{svg}
 \usepackage[style=verbose]{biblatex}
 \usepackage{filecontents}
 \usepackage{cleveref}
@@ -166,10 +167,13 @@ To run sources, run either \texttt{./GifSource.sh -c [path to config file]}, or 
 There are 4 provided config files and gifs in the source zip.
 In order to connect to a source, type the source ID into the client and click connect - the source ID for the source is printed to the source console when it starts up.
 Please note the \texttt{rmiregistry} is automatically started when running \texttt{GifSource.sh}, \texttt{GifSource.bat}, \texttt{SourceProxy.sh}, \texttt{SourceProxy.bat}.
-
 To use the optional \texttt{SourceProxy} middleware, make sure \texttt{SourceProxy} is started before the sources/sinks.
 
-\includepdf[landscape=false,scale=0.9,pagecommand={\subsection{System Diagram}\label{sec:system_diagram}}]{SystemDiagram.pdf}
+%\includepdf[landscape=false,scale=0.9,pagecommand={\subsection{System Diagram}\label{sec:system_diagram}}]{SystemDiagram.pdf}
+\subsection{System Diagram}\label{sec:system_diagram}
+\begin{center}
+\includegraphics[width=0.9\textheight,height=\textwidth,keepaspectratio,angle=90]{SystemDiagram}
+\end{center}
 
 %%
 %% SECTION: Sources and Sinks
