@@ -100,7 +100,7 @@ Such features include sink registry management, RMI registry binding, sending no
 \texttt{NotificationSource} provides standardised registry binding methods to bind to any server on any port.
 It also provides a single method to send (publish) notifications to all sinks using the sink registry management.
 In addition, the code to handle lost connections is also tied in here.
-This allows an application's source to call\texttt{sendNotification(Notification)} to publish a notification and the framework handles the message and delivery.
+This allows an application's source to call \texttt{sendNotification(Notification)} to publish a notification and the framework handles the message and delivery.
 
 \texttt{NotificationSource} features a thread worker pool that is used to send notifications.
 Each thread in the pool sends a notification to one source.
@@ -111,6 +111,7 @@ See \Cref{sec:lost_conns} for more details.
 \texttt{NotificationSink} has methods to abstract gracefully connecting/disconnecting from sources and handling notifications.
 When a sink registers with a source, the framework provides the ability for a callback function to be executed for that source.
 This allows the Sink to be able to handle the notifications from different sources effectively.
+
 For example, a Sink connected to a CCTV system Source would either want to display the image, or save it.
 But, a Sink registered to a text based weather Source would not be able to display this data as an image.
 The framework allows one sink to register to multiple sources and attach a different handler to each source;
@@ -154,8 +155,8 @@ There is a \texttt{source} declaration that specifies the path to the GIF file s
 \subsection{Testing}
 To test the framework, I started the rmiregistry on my computer.
 I found some gifs, created config files and started the sources.
-I ran the client on my laptop and connected over Wifi to the sources.
-The, I began to test all the different scenarios: connecting, disconnecting, network issues, etc.
+I ran the client on my laptop and connected over WiFi to the sources.
+I began to test all the different scenarios: connecting, disconnecting, network issues, etc.
 
 This became tedious, so I created some helper scripts to start the applications for me.
 These scripts are included in the source zip.
@@ -237,7 +238,7 @@ As a workaround, I created a proxy class to bind the sources.
 
 With \texttt{SourceProxy} running, the application flow is:
 \\begin{\begin{enumerate}
-  \item Start \texttt{remiregistry} on Server1.
+  \item Start \texttt{rmiregistry} on Server1.
   \item Start \texttt{SourceProxy} on Server1.
   \item Start any \textbf{Source} on any server with a config file that uses Server1. (E.g.: \texttt{server: Server1,1099;})
   \item Source registers with \texttt{SourceProxy} on Server1 and \texttt{SourceProxy} binds the remote object to Server1's RMI registry.
